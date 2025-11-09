@@ -16,6 +16,7 @@ return {
             api.inform("Hello, world!", "Example Mod");
         });
 
+        // Example of using events
         this.addEventListener('projectCreating', (e) => {
             api.inform("Nah, no new project for you!", "Example Mod");
             e.preventDefault();
