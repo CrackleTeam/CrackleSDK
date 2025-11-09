@@ -59,7 +59,6 @@ function triggerModEvent(event) {
     let ret = true;
     for (const mod of window.__crackle__.loadedMods) {
         ret = ret && mod.dispatchEvent(event);
-        alert(ret);
     }
 
     return ret;
