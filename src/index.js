@@ -210,6 +210,8 @@ async function main() {
         originalUpdateLabel.call(this);
         adjustLabel();
     };
+
+    attachEventHandlers();
 }
 
 main();

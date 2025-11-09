@@ -8,7 +8,7 @@
       "matches": ["*://snap.berkeley.edu/snap/snap.html*"],
       "js": [
         "src/mod.js", "src/modManager.js", 
-        "src/api.js", "src/index.js"
+        "src/events.js", "src/api.js", "src/index.js"
       ],
       "world": "MAIN"
     }
