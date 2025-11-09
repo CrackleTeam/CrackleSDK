@@ -1,0 +1,16 @@
+{
+  "manifest_version": 2,
+  "name": "Crackle SDK",
+  "version": "1.0",
+  "description": "Modding framework for Snap!",
+  "content_scripts": [
+    {
+      "matches": ["*://snap.berkeley.edu/snap/snap.html*"],
+      "js": [
+        "src/mod.js", "src/modManager.js", 
+        "src/api.js", "src/index.js"
+      ],
+      "world": "MAIN"
+    }
+  ]
+}
