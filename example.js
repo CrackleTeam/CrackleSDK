@@ -17,9 +17,12 @@ return {
         });
 
         // Example of using events
-        this.addEventListener('projectCreating', (e) => {
-            api.inform("Nah, no new project for you!", "Example Mod");
-            e.preventDefault();
+        this.addEventListener('categoryCreating', (e) => {
+            if (e.detail.name == "Hello") {
+                api.inform("I dont accept your hello.", "Example Mod");
+
+                e.preventDefault();
+            }
         });
     },
 

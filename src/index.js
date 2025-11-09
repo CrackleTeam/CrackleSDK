@@ -211,7 +211,7 @@ async function main() {
         adjustLabel();
     };
 
-    attachEventHandlers();
+    attachEventHandlers(ide);
 }
 
 main();

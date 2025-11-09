@@ -45,3 +45,6 @@ The object stored in `this` when you call main is actually NOT the object you re
 
 ### Events
 * `projectCreating` - Triggered whenever the current project is about to be replaced with a new one. You can cancel this action by calling "preventDefault" on it.
+* `projectCreated` - Triggered after a project is created, if it was not cancelled by another event
+* `categoryCreating` - Triggered whenever a new category is about to be created. You can cancel this action by calling "preventDefault" on it. The 'detail' property of the event object contains the `name` and `color` (Color) of the category.
+* `categoryCreated` - Triggered after a category is created, if it was not cancelled by another event. 'detail' is the same as categoryCreating.
