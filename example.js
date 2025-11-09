@@ -15,6 +15,11 @@ return {
         this.menu.addItem("Say hello", () => {
             api.inform("Hello, world!", "Example Mod");
         });
+
+        this.addEventListener('projectCreating', (e) => {
+            api.inform("Nah, no new project for you!", "Example Mod");
+            e.preventDefault();
+        });
     },
 
     // Cleanup functions - get ran when the mod is "deleted"
