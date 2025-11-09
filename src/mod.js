@@ -3,31 +3,34 @@ function findModById(id) {
     return window.__crackle__.loadedMods.find(mod => mod.id == id);
 }
 
-function Mod(code) {
-    let returnValue = (new Function(code))();
+class Mod extends EventTarget {
+    constructor(code) {
+        super();
+        let returnValue = (new Function(code))();
 
-    if (returnValue && typeof returnValue === "object") {
-        this.id = returnValue.id || "unknown-mod";
-        this.name = returnValue.name || "Unknown Mod";
-        this.description = returnValue.description || "No description provided.";
-        this.version = returnValue.version || "0.0";
-        this.author = returnValue.author || "Anonymous";
-        this.cleanupFuncs = returnValue.cleanupFuncs || [];
-        this.depends = returnValue.depends || [];
-        this.doMenu = returnValue.doMenu == undefined ? false : returnValue.doMenu;
-        if (typeof returnValue.main === "function") {
-            this.main = returnValue.main;
-        } else {
-            throw new Error("Mod must have a main() function.");
-        }
-
-        for (const dependency of this.depends) {
-            if (!findModById(dependency)) {
-                throw new Error(`Mod depends on "${dependency}", but "${dependency}" is not loaded.`);
+        if (returnValue && typeof returnValue === "object") {
+            this.id = returnValue.id || "unknown-mod";
+            this.name = returnValue.name || "Unknown Mod";
+            this.description = returnValue.description || "No description provided.";
+            this.version = returnValue.version || "0.0";
+            this.author = returnValue.author || "Anonymous";
+            this.cleanupFuncs = returnValue.cleanupFuncs || [];
+            this.depends = returnValue.depends || [];
+            this.doMenu = returnValue.doMenu == undefined ? false : returnValue.doMenu;
+            if (typeof returnValue.main === "function") {
+                this.main = returnValue.main;
+            } else {
+                throw new Error("Mod must have a main() function.");
             }
-        }
 
-        if (this.doMenu) this.menu = new MenuMorph();
+            for (const dependency of this.depends) {
+                if (!findModById(dependency)) {
+                    throw new Error(`Mod depends on "${dependency}", but "${dependency}" is not loaded.`);
+                }
+            }
+
+            if (this.doMenu) this.menu = new MenuMorph();
+        }
     }
 }
 
@@ -50,4 +53,14 @@ function deleteMod(id) {
     mod.cleanupFuncs.forEach(func => func());
 
     window.__crackle__.loadedMods = window.__crackle__.loadedMods.filter(mod => mod.id != id);
+}
+
+function triggerModEvent(event) {
+    let ret = true;
+    for (const mod of window.__crackle__.loadedMods) {
+        ret = ret && mod.dispatchEvent(event);
+        alert(ret);
+    }
+
+    return ret;
 }
