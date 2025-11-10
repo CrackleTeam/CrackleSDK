@@ -15,7 +15,7 @@ function attachEventHandlers(ide) {
         });
     };
 
-    // categoryCreating
+    // categoryCreating and categoryCreated
     ide._addPaletteCategory = ide.addPaletteCategory;
     ide.addPaletteCategory = function (name, color) {
         if (triggerModEvent(new CustomEvent("categoryCreating", {
@@ -23,6 +23,10 @@ function attachEventHandlers(ide) {
             detail: { name, color }
         }))) {
             this._addPaletteCategory(name, color);
+
+            triggerModEvent(new CustomEvent("categoryCreated", {
+                detail: { name, color }
+            }));
         }
     }
 }

@@ -5,6 +5,9 @@ This file will contain current and previous changes to Crackle. Make sure to upd
 
 # In development
 
+## 2025-11-10
+ * `categoryCreated` event to match `categoryCreating`
+ 
 ## 2025-11-09
  * better API doc
  * events - only `projectCreating` for now
