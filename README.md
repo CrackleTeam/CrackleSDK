@@ -1,5 +1,5 @@
 # CrackleSDK
-![Crackle Logo](doc/Logo.png)
+![Crackle Logo](doc/logo.png)
 
 [History](HISTORY.md) | [License](LICENSE)
 
