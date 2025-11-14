@@ -6,8 +6,11 @@ This file will contain current and previous changes to Crackle. Make sure to upd
 # In development
 
 ## 2025-11-13
+ * fix README logo
+ * updated README with contributing instructions
+ * updated README to provide links to HISTORY.MD and LICENSE
  * added LICENSE, same from original CrackleSDK repo (before I pushed this copy)
- 
+
 ## 2025-11-10
  * `categoryCreated` event to match `categoryCreating`
  
