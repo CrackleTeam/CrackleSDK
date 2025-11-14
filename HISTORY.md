@@ -5,6 +5,9 @@ This file will contain current and previous changes to Crackle. Make sure to upd
 
 # In development
 
+## 2025-11-13
+ * added LICENSE, same from original CrackleSDK repo (before I pushed this copy)
+ 
 ## 2025-11-10
  * `categoryCreated` event to match `categoryCreating`
  
