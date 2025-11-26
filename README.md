@@ -29,3 +29,5 @@ For mod creators, check out [the API documentation](doc/API.md) so you can make 
 
 # Contributing
 Contributes are welcome! Make sure that whenever you do a change, update the HISTORY.md file for later! We dont have much style guides, just make sure to put that comment at the start of any new files. If theres anything style-related thing in your pull request that any of us want you to change, we will just tell you.
+
+Also, try to use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/#specification) format for your commits messages. It doesn't have to be perfect, just please use it.

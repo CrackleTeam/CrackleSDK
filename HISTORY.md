@@ -11,6 +11,7 @@ This file will contain current and previous changes to Crackle. Make sure to upd
  * get name from id if not provided
  * require ID
  * added some comments/documentation to index.js
+ * added conventional commits message to README.md
 
 ## 2025-11-13
  * fix README logo
