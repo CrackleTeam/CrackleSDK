@@ -5,6 +5,13 @@ This file will contain current and previous changes to Crackle. Make sure to upd
 
 # In development
 
+## 2025-11-25
+ * combine all files into one index.js file
+ * add license comment to index.js
+ * get name from id if not provided
+ * require ID
+ * added some comments/documentation to index.js
+
 ## 2025-11-13
  * fix README logo
  * updated README with contributing instructions

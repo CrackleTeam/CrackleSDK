@@ -6,10 +6,7 @@
   "content_scripts": [
     {
       "matches": ["*://snap.berkeley.edu/snap/snap.html*"],
-      "js": [
-        "src/mod.js", "src/modManager.js", 
-        "src/events.js", "src/api.js", "src/index.js"
-      ],
+      "js": [ "index.js" ],
       "world": "MAIN"
     }
   ]
