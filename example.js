@@ -24,6 +24,14 @@ return {
                 e.preventDefault();
             }
         });
+
+        // Example of menu hooking
+        api.registerMenuHook("projectMenu", (menu) => {
+            menu.addLine();
+            menu.addItem("Example Mod - Say hello", () => {
+                alert("hi");
+            })
+        });
     },
 
     // Cleanup functions - get ran when the mod is "deleted"

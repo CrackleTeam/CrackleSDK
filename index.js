@@ -64,6 +64,8 @@ class Mod extends EventTarget {
 
             // create menu if needed
             if (this.doMenu) this.menu = new MenuMorph();
+
+            this.menuHooks = [];
         } else {
             throw new Error("Mod code must return an object.");
         }
@@ -199,9 +201,9 @@ function attachEventHandlers(ide) {
 }
 
 // Create the API object passed to mods
-function createApi(id) {
+function createApi(mod) {
     return {
-        _id: id,
+        _mod: mod,
         ide: world.children[0],
         world: world,
 
@@ -218,6 +220,10 @@ function createApi(id) {
             this.ide.inform(title || "Information", text);
         },
 
+        registerMenuHook(name, func) {
+            mod.menuHooks.push({name, func});
+        },
+
         ...window.__crackle__.extraApi
     }
 }
@@ -232,6 +238,53 @@ function waitForSnapReady() {
             }
         }, 100);
     });
+}
+
+// attach hooks for menu hooks functions
+function attachMenuHooks(ide) {
+    function applyHooks(menu, name) {
+        window.__crackle__.loadedMods.forEach(mod => {
+            mod.menuHooks.forEach(hook => {
+                if (hook.name == name)
+                    hook.func(menu);
+            })
+        });
+    }
+
+    // hook MenuMorph to call hooks for different menus
+    MenuMorph.prototype._popup = MenuMorph.prototype.popup;
+    MenuMorph.prototype.popup = function (world, pos) {
+        if (this.target) {
+            if (window.__crackle__.currentMenu) 
+                applyHooks(this, window.__crackle__.currentMenu);
+        }
+
+        return this._popup(world, pos);
+    }
+
+    // projectMenu
+    IDE_Morph.prototype._projectMenu = IDE_Morph.prototype.projectMenu;
+    IDE_Morph.prototype.projectMenu = function() {
+        window.__crackle__.currentMenu = "projectMenu";
+        this._projectMenu();
+        window.__crackle__.currentMenu = null
+    }
+
+    // settingsMenu
+    IDE_Morph.prototype._settingsMenu = IDE_Morph.prototype.settingsMenu;
+    IDE_Morph.prototype.settingsMenu = function() {
+        window.__crackle__.currentMenu = "settingsMenu";
+        this._settingsMenu();
+        window.__crackle__.currentMenu = null
+    }
+
+    // cloudMenu
+    IDE_Morph.prototype._cloudMenu = IDE_Morph.prototype.cloudMenu;
+    IDE_Morph.prototype.cloudMenu = function() {
+        window.__crackle__.currentMenu = "cloudMenu";
+        this._cloudMenu();
+        window.__crackle__.currentMenu = null
+    }
 }
 
 // Main function
@@ -266,11 +319,13 @@ async function main() {
                 }
             });
 
-            mod.main(createApi(mod.id));
+            mod.main(createApi(mod));
             this.loadedMods.push(mod);
 
             return mod;
-        }
+        },
+
+        currentMenu: null
     };
 
     // adjust the project label position to be after the mod button
@@ -453,8 +508,9 @@ async function main() {
         adjustLabel();
     };
 
-    // attach event handlers to IDE, and we're done!
+    // attach final things
     attachEventHandlers(ide);
+    attachMenuHooks(ide);
 }
 
 main();
