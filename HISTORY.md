@@ -12,6 +12,9 @@ This file will contain current and previous changes to Crackle. Make sure to upd
  * feat: added `scriptsMenu` menu hook
  * feat: added `snapMenu` menu hook
  * feat: added `paletteMenu` menu hook
+ * feat: added functionality for loading mods on startup,
+   for now manually modify this list until mod installing
+   exists
 
 ## 2025-11-25
  * combine all files into one index.js file

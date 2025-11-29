@@ -221,7 +221,7 @@ function createApi(mod) {
         },
 
         registerMenuHook(name, func) {
-            mod.menuHooks.push({name, func});
+            mod.menuHooks.push({ name, func });
         },
 
         ...window.__crackle__.extraApi
@@ -255,7 +255,7 @@ function attachMenuHooks(ide) {
     MenuMorph.prototype._popup = MenuMorph.prototype.popup;
     MenuMorph.prototype.popup = function (world, pos) {
         if (this.target) {
-            if (window.__crackle__.currentMenu) 
+            if (window.__crackle__.currentMenu)
                 applyHooks(this, window.__crackle__.currentMenu);
         }
 
@@ -264,7 +264,7 @@ function attachMenuHooks(ide) {
 
     // projectMenu
     IDE_Morph.prototype._projectMenu = IDE_Morph.prototype.projectMenu;
-    IDE_Morph.prototype.projectMenu = function() {
+    IDE_Morph.prototype.projectMenu = function () {
         window.__crackle__.currentMenu = "projectMenu";
         this._projectMenu();
         window.__crackle__.currentMenu = null
@@ -272,7 +272,7 @@ function attachMenuHooks(ide) {
 
     // settingsMenu
     IDE_Morph.prototype._settingsMenu = IDE_Morph.prototype.settingsMenu;
-    IDE_Morph.prototype.settingsMenu = function() {
+    IDE_Morph.prototype.settingsMenu = function () {
         window.__crackle__.currentMenu = "settingsMenu";
         this._settingsMenu();
         window.__crackle__.currentMenu = null
@@ -280,7 +280,7 @@ function attachMenuHooks(ide) {
 
     // cloudMenu
     IDE_Morph.prototype._cloudMenu = IDE_Morph.prototype.cloudMenu;
-    IDE_Morph.prototype.cloudMenu = function() {
+    IDE_Morph.prototype.cloudMenu = function () {
         window.__crackle__.currentMenu = "cloudMenu";
         this._cloudMenu();
         window.__crackle__.currentMenu = null
@@ -288,7 +288,7 @@ function attachMenuHooks(ide) {
 
     // snapMenu
     IDE_Morph.prototype._snapMenu = IDE_Morph.prototype.snapMenu;
-    IDE_Morph.prototype.snapMenu = function() {
+    IDE_Morph.prototype.snapMenu = function () {
         window.__crackle__.currentMenu = "snapMenu";
         this._snapMenu();
         window.__crackle__.currentMenu = null
@@ -296,7 +296,7 @@ function attachMenuHooks(ide) {
 
     // scriptsMenu
     ScriptsMorph.prototype._userMenu = ScriptsMorph.prototype.userMenu;
-    ScriptsMorph.prototype.userMenu = function() {
+    ScriptsMorph.prototype.userMenu = function () {
         let menu = this._userMenu();
         applyHooks(menu, "scriptsMenu");
         return menu;
@@ -310,11 +310,11 @@ function attachMenuHooks(ide) {
     // TODO: Remove any palette cache on hooks of this
     // and refresh the current palette
     SpriteMorph.prototype._freshPalette = SpriteMorph.prototype.freshPalette;
-    SpriteMorph.prototype.freshPalette = function(category) {
+    SpriteMorph.prototype.freshPalette = function (category) {
         let palette = this._freshPalette(category)
 
         palette._userMenu = palette.userMenu;
-        palette.userMenu = function() {
+        palette.userMenu = function () {
             let menu = this._userMenu();
             applyHooks(menu, "paletteMenu")
             return menu;
@@ -322,6 +322,34 @@ function attachMenuHooks(ide) {
 
 
         return palette;
+    }
+}
+
+function loadAutoloadMods() {
+    const data = localStorage.getItem("crackle_autoload_mods");
+    if (!data)
+        localStorage.setItem("crackle_autoload_mods", "[]");
+
+    return data ? JSON.parse(data) : [];
+}
+
+async function autoloadMods(ide) {
+    window.__crackle__.autoloadMods = loadAutoloadMods();
+
+    for (const mod of window.__crackle__.autoloadMods) {
+        try {
+            if (mod.type === "code") {
+                window.__crackle__.loadMod(mod.content);
+            } else if (mod.type === "url") {
+                const resp = await fetch(mod.content);
+                const code = await resp.text();
+                window.__crackle__.loadMod(code);
+            }
+        } catch (e) {
+            ide.showMessage("Failed to autoload mod, check console for more info");
+
+            console.error("Failed to load mod: ", mod, e);
+        }
     }
 }
 
@@ -345,6 +373,7 @@ async function main() {
         version: "1.0",
         loadedMods: [],
         extraApi: {},
+        autoloadMods: [],
 
         // load a mod from code
         loadMod(code) {
@@ -453,7 +482,7 @@ async function main() {
                 world
             );
         },
-        
+
         // dialog to load mod from code
         loadMod() {
             new DialogBoxMorph(
@@ -549,6 +578,7 @@ async function main() {
     // attach final things
     attachEventHandlers(ide);
     attachMenuHooks(ide);
+    await autoloadMods(ide);
 }
 
 main();
