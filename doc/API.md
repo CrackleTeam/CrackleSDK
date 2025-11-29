@@ -43,6 +43,8 @@ This section describes the variables/functions in the `api` variable.
     * `projectMenu` - Menu from file button
     * `settingsMenu` - Menu from settings button
     * `cloudMenu` - Menu from could button
+    * `scriptsMenu` - Menu when you right-click on a scripting area
+    * `snapMenu` - Menu when you click the Snap! logo
 
 ## `this` in `main`
 The object stored in `this` when you call main is actually NOT the object you returned. Yes, most of it is copied, but its actually a `Mod` object (contained in `mod.js`). This mod object actually support events, by using EventTarget. You can `addEventListener` and such, just like DOM elements. The section following contains those events you can attach to.

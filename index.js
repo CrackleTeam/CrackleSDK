@@ -285,6 +285,44 @@ function attachMenuHooks(ide) {
         this._cloudMenu();
         window.__crackle__.currentMenu = null
     }
+
+    // snapMenu
+    IDE_Morph.prototype._snapMenu = IDE_Morph.prototype.snapMenu;
+    IDE_Morph.prototype.snapMenu = function() {
+        window.__crackle__.currentMenu = "snapMenu";
+        this._snapMenu();
+        window.__crackle__.currentMenu = null
+    }
+
+    // scriptsMenu
+    ScriptsMorph.prototype._userMenu = ScriptsMorph.prototype.userMenu;
+    ScriptsMorph.prototype.userMenu = function() {
+        let menu = this._userMenu();
+        applyHooks(menu, "scriptsMenu");
+        return menu;
+    }
+
+    // paletteMenu
+    //
+    // NOTE: If a user opens a category before loading a mod
+    // that uses paletteMenu, the hook will not take effect.
+    //
+    // TODO: Remove any palette cache on hooks of this
+    // and refresh the current palette
+    SpriteMorph.prototype._freshPalette = SpriteMorph.prototype.freshPalette;
+    SpriteMorph.prototype.freshPalette = function(category) {
+        let palette = this._freshPalette(category)
+
+        palette._userMenu = palette.userMenu;
+        palette.userMenu = function() {
+            let menu = this._userMenu();
+            applyHooks(menu, "paletteMenu")
+            return menu;
+        }
+
+
+        return palette;
+    }
 }
 
 // Main function

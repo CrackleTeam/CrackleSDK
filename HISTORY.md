@@ -9,6 +9,9 @@ This file will contain current and previous changes to Crackle. Make sure to upd
  * docs: add hooking tip to API.md
  * feat: hooking for menus, see API.md
  * docs: added docs for menu hooking
+ * feat: added `scriptsMenu` menu hook
+ * feat: added `snapMenu` menu hook
+ * feat: added `paletteMenu` menu hook
 
 ## 2025-11-25
  * combine all files into one index.js file
