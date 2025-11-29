@@ -5,6 +5,9 @@ This file will contain current and previous changes to Crackle. Make sure to upd
 
 # In development
 
+## 2025-11-29
+ * docs: add hooking tip to API.md
+
 ## 2025-11-25
  * combine all files into one index.js file
  * add license comment to index.js
