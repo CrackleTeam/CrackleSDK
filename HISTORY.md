@@ -5,6 +5,9 @@ This file will contain current and previous changes to Crackle. Make sure to upd
 
 # In development
 
+## 2025-12-10
+ * fix: change to manfiest v2, fixed issue #1
+
 ## 2025-11-29
  * docs: add hooking tip to API.md
  * feat: hooking for menus, see API.md
