@@ -42,7 +42,7 @@ This section describes the variables/functions in the `api` variable.
 * `registerMenuHook` - Attach a menu hook. First item is the name of the menu to hook, and the second is a function which takes in a MenuMorph and modifes it. Here are the menu names:
     * `projectMenu` - Menu from file button
     * `settingsMenu` - Menu from settings button
-    * `cloudMenu` - Menu from could button
+    * `cloudMenu` - Menu from cloud button
     * `scriptsMenu` - Menu when you right-click on a scripting area
     * `snapMenu` - Menu when you click the Snap! logo
 
