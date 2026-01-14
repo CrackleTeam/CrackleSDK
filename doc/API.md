@@ -26,20 +26,20 @@ return {
 }
 ```
 
-Read the comments contained in the example for what each objec property does. Your mod is loading by calling the `main` function, passing in a `api` object (described in API).
+Read the comments contained in the example for what each object property does. Your mod is loaded by calling the `main` function, passing in a `api` object (described in API).
 
 ## API
 This section describes the variables/functions in the `api` variable.
 
 ### Variables
 * `ide` - The `IDE_Morph` (check Snap!'s `gui.js` for more infomation) Snap! is using. This is the Snap! interface.
-* `world` - The `WorldMorph` (check Snap!'s `morphic.js` for more infomation) Snap! uses. This the thing that contains the IDE.
+* `world` - The `WorldMorph` (check Snap!'s `morphic.js` for more infomation) Snap! uses. This is the thing that contains the IDE.
 
 ### Functions
 * `showMsg` - Show a basic message to the user.
-* `addApi` - Add a "extra API" to the Crackle API. This is useful for libraries. This is added to new mods `api` objects. (Note that this currently doesn't modify existing mods)
+* `addApi` - Add a "extra API" to the Crackle API. This is useful for libraries. This is added to new mods' `api` objects. (Note that this currently doesn't modify existing mods)
 * `inform` - Inform the user of something, with a title.
-* `registerMenuHook` - Attach a menu hook. First item is the name of the menu to hook, and the second is a function which takes in a MenuMorph and modifes it. Here are the menu names:
+* `registerMenuHook` - Attach a menu hook. First item is the name of the menu to hook, and the second is a function which takes in a MenuMorph and modifies it. Here are the menu names:
     * `projectMenu` - Menu from file button
     * `settingsMenu` - Menu from settings button
     * `cloudMenu` - Menu from cloud button
@@ -47,7 +47,7 @@ This section describes the variables/functions in the `api` variable.
     * `snapMenu` - Menu when you click the Snap! logo
 
 ## `this` in `main`
-The object stored in `this` when you call main is actually NOT the object you returned. Yes, most of it is copied, but its actually a `Mod` object (contained in `mod.js`). This mod object actually support events, by using EventTarget. You can `addEventListener` and such, just like DOM elements. The section following contains those events you can attach to.
+The object stored in `this` when you call main is actually NOT the object you returned. Yes, most of it is copied, but its actually a `Mod` object (contained in `mod.js`). This mod object actually supports events, by using EventTarget. You can `addEventListener` and such, just like DOM elements. The section following contains those events you can attach to.
 
 ## Tips
 What follows are several "tips" on modding.
