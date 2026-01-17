@@ -7,7 +7,13 @@ A modding framework for Snap!, made by [@tethrarxitet](https://forum.snap.berkel
 [@codingisfun2831t](https://forum.snap.berkeley.edu/u/codingisfun2831t).
 
 # Loading in browser
-For now, CrackleSDK does not have any pages for it on common browser extension stores. I do not know the process for Chrome, but on Firefox go to `about:debugging`, go to `This Firefox`, click `Load Temporary Add-on...` and select the `manifest.json` file in this directory. Now, whenever you launch Snap! you should see the new addon button.
+For now, CrackleSDK does not have any pages for it on common browser extension stores, so you will have to load it manually for your browser. I haven't put it on any stores as it isnt in a good enough state yet..
+
+## Firefox
+Go to `about:debugging`, go to `This Firefox`, click `Load Temporary Add-on...` and select the `manifest.json` file in this directory. Now, whenever you launch Snap! you should see the new addon button.
+
+## Chrome
+Go to the "Manage Extensions" option in the extension menu [chrome://extensions/](chrome://extensions/). There should be a "Load unpacked" button at the top left. Import your CrackleSDK folder in there, and see the results.
 
 # How to use
 When launching Snap! with Crackle open, you should see a new button being added to the title bar:
