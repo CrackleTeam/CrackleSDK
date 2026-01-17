@@ -387,6 +387,7 @@ async function main() {
   // create the __crackle__ object
   window.__crackle__ = {
     version: "1.0",
+    source: "https://github.com/CrackleTeam/CrackleSDK/releases/latest",
     loadedMods: [],
     extraApi: {},
     autoloadMods: [],
@@ -500,9 +501,12 @@ async function main() {
           "About Crackle",
           `Crackle, a modding framework for Snap!\n` +
             `Developed by tethrarxitet and codingisfun2831t\n` +
-            `Version ${window.__crackle__.version}`,
+            `Version ${window.__crackle__.version}\n`,
           world,
         );
+      },
+      download() {
+        window.open(window.__crackle__.source, '_blank');
       },
 
       // dialog to load mod from code
@@ -557,6 +561,7 @@ async function main() {
       action() {
         const menu = new MenuMorph(modButton);
         menu.addItem("About Crackle...", "about");
+        menu.addItem("Download Source...", "download");
         menu.addLine();
         menu.addItem("Load mod from code...", "loadMod");
         menu.addItem("Load mod from file...", "loadModFile");
