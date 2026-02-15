@@ -516,7 +516,7 @@ async function main() {
           (input) => {
             try {
               window.__crackle__.loadMod(input);
-              ide.showMessage(`Mod $loaded successfully!`);
+              ide.showMessage(`Mod loaded successfully!`);
             } catch (e) {
               ide.showMessage(
                 `Failed to load mod:\n${e}. Check the console for more details.`,
@@ -598,6 +598,12 @@ async function main() {
           this.label.top(),
         ),
       );
+      this.label.setExtent(
+        new Point(
+          this.steppingButton.left() - this.modButton.right() - 5 * 2,
+          this.label.children[0].height()
+        )
+      );
       this.label.children[0].setPosition(this.label.position());
     };
     controlBar.fixLayout_ = controlBar.fixLayout;
@@ -613,6 +619,11 @@ async function main() {
     adjustLabel(controlBar.modButton);
     controlBar.fixLayout();
   };
+  IDE_Morph.prototype.toggleAppMode_ = IDE_Morph.prototype.toggleAppMode
+  IDE_Morph.prototype.toggleAppMode = function (x) {
+    this.toggleAppMode_(x);
+    this.isAppMode ? this.controlBar.modButton.hide() : this.controlBar.modButton.show()
+  }
   // create mod button
 
   ide.createModButton();
