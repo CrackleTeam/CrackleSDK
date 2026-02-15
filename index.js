@@ -47,11 +47,17 @@ class Mod extends EventTarget {
       this.version = returnValue.version || "0.0";
       this.author = returnValue.author || "Anonymous";
       this.cleanupFuncs = returnValue.cleanupFuncs || [];
+      if (typeof this.cleanupFuncs[0] == "string") {
+        this.cleanupFuncs = this.cleanupFuncs.map(func => eval(`(${func})`))
+      }
       this.depends = returnValue.depends || [];
       this.doMenu =
-        returnValue.doMenu == undefined ? false : returnValue.doMenu;
+        returnValue.doMenu || false;
+        console.warn(returnValue.main, returnValue)
       if (typeof returnValue.main === "function") {
         this.main = returnValue.main;
+      } else if (typeof returnValue.main === "string") {
+        this.main = eval(`({ ${returnValue.main} })`).main // ugh
       } else {
         throw new Error("Mod must have a main() function.");
       }
@@ -89,7 +95,55 @@ function showModInfo(id) {
     world,
   );
 }
-
+// make a deep clone of anything
+function deepClone(x) {
+  if (["string", "number"].includes(typeof x)) {
+    return x;
+  }
+  var isArray = Array.isArray(x),
+  o = isArray ? [...x] : {...x};
+  if (isArray) {
+    o = o.map((y)=>{
+      if (isNil(y)) {
+        return y
+      }
+      if (Array.isArray(y) || (y)?.toString?.() == "[object Object]") {
+        return deepClone(y)
+      }
+      return y
+    })
+  } else {
+    Object.keys(o).map((e)=>{
+      var y = o[e];
+      if (isNil(y)) {
+        return [e, y]
+      }
+      if (Array.isArray(y) || (y)?.toString?.() == "[object Object]") {
+        return [e, deepClone(y)]
+      }
+      return [e, y];
+    }).forEach(e => o[e[0]] = e[1])
+  }
+  return o
+}
+// stringify functions in objects and arrays
+function stringifyFunctions (x) {
+  var o = deepClone(x);
+  var objectObject = ({}).toString();
+  (Object.keys(o)).forEach(function (key) {
+    var value = o[key]
+    if (isNil(value)) {
+      return value
+    }
+    if (value instanceof Function) {
+      o[key] = value.toString();
+    }
+    if (Array.isArray(value) || value?.toString?.() == objectObject) {
+      o[key] = stringifyFunctions(value)
+    }
+  })
+  return o
+}
 // Delete a mod by its ID
 function deleteMod(id) {
   let mod = findModById(id);
@@ -148,6 +202,26 @@ function manageLoadedMods() {
     infoButton.setPosition(new Point(label.right() + 5, 2));
     modMorph.addChild(infoButton);
 
+    const autoloadButton = new PushButtonMorph(
+      this,
+      () => {
+        if (isModAutoloaded(mod.id)) {
+          deleteAutoloadMod(mod.id);
+          world.children[0].showMessage(`${mod.name} will no longer run on startup again.`);
+        } else {
+          addAutoloadMod(mod);
+          world.children[0].showMessage(`${mod.name} will now run every time you open Snap!`);
+        }
+        autoloadButton.labelString = isModAutoloaded(mod.id) ? "Un-autoload" : "Autoload";
+        autoloadButton.createLabel();
+        autoloadButton.fixLayout();
+        modMorph.fixLayout();
+      },
+      isModAutoloaded(mod.id) ? "Un-autoload" : "Autoload",
+    );
+    autoloadButton.setColor(new Color(250, 250, 100));
+    autoloadButton.setPosition(new Point(infoButton.right() + 5, 2));
+    modMorph.addChild(autoloadButton);
     const deleteButton = new PushButtonMorph(
       this,
       () => {
@@ -158,10 +232,15 @@ function manageLoadedMods() {
       "Delete",
     );
     deleteButton.setColor(new Color(250, 100, 100));
-    deleteButton.setPosition(new Point(infoButton.right() + 5, 2));
+    deleteButton.setPosition(new Point(autoloadButton.right() + 5, 2));
     modMorph.addChild(deleteButton);
 
     useOdd = !useOdd;
+    modMorph.fixLayout = () => {
+      infoButton.setLeft(label.right() + 5);
+      autoloadButton.setLeft(infoButton.right() + 5);
+      deleteButton.setLeft(autoloadButton.right() + 5);
+    }
     return modMorph;
   }
 
@@ -349,22 +428,55 @@ function loadAutoloadMods() {
   return data ? JSON.parse(data) : [];
 }
 
+function saveAutoloadMods() {
+  localStorage.setItem("crackle_autoload_mods", JSON.stringify(
+    window.__crackle__.autoloadMods.map(x=>{
+      var n = {...x};
+      delete n.menu
+      return stringifyFunctions(n)
+    })
+  ));
+}
+
+function isModAutoloaded(id, index) {
+  var existed = window.__crackle__.autoloadMods.findIndex((m)=>(m.id == id))
+  if (index) {
+    return existed;
+  }
+  return existed > -1
+}
+
+function addAutoloadMod(mod) {
+  var existed = window.__crackle__.autoloadMods.findIndex((m)=>(m.id == mod.id))
+  existed > -1 ? window.__crackle__.autoloadMods[existed] = mod : window.__crackle__.autoloadMods.push(mod);
+  saveAutoloadMods();
+}
+
+function deleteAutoloadMod(id) {
+  var existed = window.__crackle__.autoloadMods.findIndex((m)=>(m.id == id));
+  if (existed > -1) {
+    window.__crackle__.autoloadMods.splice(existed, 1);
+  }
+  saveAutoloadMods();
+}
+
 async function autoloadMods(ide) {
   window.__crackle__.autoloadMods = loadAutoloadMods();
 
   for (const mod of window.__crackle__.autoloadMods) {
     try {
-      if (mod.type === "code") {
-        window.__crackle__.loadMod(mod.content);
-      } else if (mod.type === "url") {
+      if (mod.type === "url") {
         const resp = await fetch(mod.content);
         const code = await resp.text();
         window.__crackle__.loadMod(code);
+      } else {
+        window.__crackle__.loadMod("return " + JSON.stringify(stringifyFunctions(mod)));
+
       }
     } catch (e) {
       ide.showMessage("Failed to autoload mod, check console for more info");
 
-      console.error("Failed to load mod: ", mod, e);
+      console.error("Failed to load mod: ", mod, "return " + JSON.stringify(mod), e);
     }
   }
 }
@@ -435,7 +547,6 @@ async function main() {
     }
     var modButton = controlBar.settingsButton.fullCopy();
     controlBar.modButton = modButton;
-    console.warn(controlBar.modButton);
     controlBar.addChild(modButton);
 
     // add functionality to mod button
