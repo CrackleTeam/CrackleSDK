@@ -98,6 +98,10 @@ function deleteMod(id) {
   window.__crackle__.loadedMods = window.__crackle__.loadedMods.filter(
     (mod) => mod.id != id,
   );
+  delete window.__crackle__.modCodes[id]
+  if (!isNil(window.__crackle__.autoloadMods[id])) {
+    deleteAutoloadMod(id)
+  }
 }
 
 // Trigger an event on all loaded mods
@@ -148,6 +152,27 @@ function manageLoadedMods() {
     infoButton.setPosition(new Point(label.right() + 5, 2));
     modMorph.addChild(infoButton);
 
+    const autoloadButton = new PushButtonMorph(
+      this,
+      () => {
+        if (isModAutoloaded(mod.id)) {
+          deleteAutoloadMod(mod.id);
+          world.children[0].showMessage(`${mod.name} will no longer run on startup again.`);
+        } else {
+          addAutoloadMod(mod.id);
+          world.children[0].showMessage(`${mod.name} will now run every time you open Snap!`);
+        }
+        autoloadButton.labelString = isModAutoloaded(mod.id) ? "Un-autoload" : "Autoload";
+        autoloadButton.createLabel();
+        autoloadButton.fixLayout();
+        modMorph.fixLayout();
+      },
+      isModAutoloaded(mod.id) ? "Un-autoload" : "Autoload",
+    );
+    autoloadButton.setColor(new Color(250, 250, 100));
+    autoloadButton.setPosition(new Point(infoButton.right() + 5, 2));
+    modMorph.addChild(autoloadButton);
+
     const deleteButton = new PushButtonMorph(
       this,
       () => {
@@ -158,10 +183,15 @@ function manageLoadedMods() {
       "Delete",
     );
     deleteButton.setColor(new Color(250, 100, 100));
-    deleteButton.setPosition(new Point(infoButton.right() + 5, 2));
+    deleteButton.setPosition(new Point(autoloadButton.right() + 5, 2));
     modMorph.addChild(deleteButton);
 
     useOdd = !useOdd;
+    modMorph.fixLayout = () => {
+      infoButton.setLeft(label.right() + 5);
+      autoloadButton.setLeft(infoButton.right() + 5);
+      deleteButton.setLeft(autoloadButton.right() + 5);
+    }
     return modMorph;
   }
 
@@ -344,23 +374,37 @@ function attachMenuHooks(ide) {
 
 function loadAutoloadMods() {
   const data = localStorage.getItem("crackle_autoload_mods");
-  if (!data) localStorage.setItem("crackle_autoload_mods", "[]");
+  if (!data) localStorage.setItem("crackle_autoload_mods", "{}");
 
-  return data ? JSON.parse(data) : [];
+  return JSON.parse(data) || {};
+}
+
+function saveAutoloadMods() {
+  localStorage.setItem("crackle_autoload_mods", JSON.stringify(window.__crackle__.autoloadMods));
+}
+
+function addAutoloadMod(id) {
+  window.__crackle__.autoloadMods[id] = window.__crackle__.modCodes[id];
+  saveAutoloadMods();
+}
+
+function deleteAutoloadMod(id) {
+  delete window.__crackle__.autoloadMods[id];
+  saveAutoloadMods();
+}
+function isModAutoloaded(id) {
+  return !!window.__crackle__.autoloadMods[id];
+  saveAutoloadMods();
 }
 
 async function autoloadMods(ide) {
   window.__crackle__.autoloadMods = loadAutoloadMods();
 
-  for (const mod of window.__crackle__.autoloadMods) {
+  for (const id of Object.keys(window.__crackle__.autoloadMods)) {
+    var mod = window.__crackle__.autoloadMods[id]
     try {
-      if (mod.type === "code") {
-        window.__crackle__.loadMod(mod.content);
-      } else if (mod.type === "url") {
-        const resp = await fetch(mod.content);
-        const code = await resp.text();
-        window.__crackle__.loadMod(code);
-      }
+        // TODO: optional fetching of mods
+        window.__crackle__.loadMod(mod);
     } catch (e) {
       ide.showMessage("Failed to autoload mod, check console for more info");
 
@@ -390,7 +434,8 @@ async function main() {
     source: "https://github.com/CrackleTeam/CrackleSDK/releases/latest",
     loadedMods: [],
     extraApi: {},
-    autoloadMods: [],
+    autoloadMods: {},
+    modCodes: {},
 
     // load a mod from code
     loadMod(code) {
@@ -407,6 +452,7 @@ async function main() {
 
       mod.main(createApi(mod));
       this.loadedMods.push(mod);
+      this.modCodes[mod.id] = (code);
 
       return mod;
     },
