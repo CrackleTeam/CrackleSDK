@@ -152,14 +152,16 @@ function manageLoadedMods() {
     infoButton.setPosition(new Point(label.right() + 5, 2));
     modMorph.addChild(infoButton);
 
-    const autoloadButton = new PushButtonMorph(
+    /*const autoloadButton = new PushButtonMorph(
       this,
       () => {
         if (isModAutoloaded(mod.id)) {
           deleteAutoloadMod(mod.id);
+          saveAutoloadMods();
           world.children[0].showMessage(`${mod.name} will no longer run on startup again.`);
         } else {
           addAutoloadMod(mod.id);
+          saveAutoloadMods();
           world.children[0].showMessage(`${mod.name} will now run every time you open Snap!`);
         }
         autoloadButton.labelString = isModAutoloaded(mod.id) ? "Un-autoload" : "Autoload";
@@ -172,6 +174,7 @@ function manageLoadedMods() {
     autoloadButton.setColor(new Color(250, 250, 100));
     autoloadButton.setPosition(new Point(infoButton.right() + 5, 2));
     modMorph.addChild(autoloadButton);
+    */
 
     const deleteButton = new PushButtonMorph(
       this,
@@ -183,14 +186,14 @@ function manageLoadedMods() {
       "Delete",
     );
     deleteButton.setColor(new Color(250, 100, 100));
-    deleteButton.setPosition(new Point(autoloadButton.right() + 5, 2));
+    deleteButton.setPosition(new Point(infoButton.right() + 5, 2));
     modMorph.addChild(deleteButton);
 
     useOdd = !useOdd;
     modMorph.fixLayout = () => {
       infoButton.setLeft(label.right() + 5);
-      autoloadButton.setLeft(infoButton.right() + 5);
-      deleteButton.setLeft(autoloadButton.right() + 5);
+     // autoloadButton.setLeft(infoButton.right() + 5);
+      deleteButton.setLeft(infoButton.right() + 5);
     }
     return modMorph;
   }
@@ -453,7 +456,8 @@ async function main() {
       mod.main(createApi(mod));
       this.loadedMods.push(mod);
       this.modCodes[mod.id] = (code);
-
+      addAutoloadMod(mod.id);
+      saveAutoloadMods();
       return mod;
     },
 
