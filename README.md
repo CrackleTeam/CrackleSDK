@@ -3,8 +3,7 @@
 
 [History](HISTORY.md) | [License](LICENSE)
 
-A modding framework for Snap!, made by [@tethrarxitet](https://forum.snap.berkeley.edu/u/tethrarxitet) and 
-[@codingisfun2831t](https://forum.snap.berkeley.edu/u/codingisfun2831t).
+A modding framework for Snap!, made by [@tethrarxitet](https://forum.snap.berkeley.edu/u/tethrarxitet), [@codingisfun2831t](https://forum.snap.berkeley.edu/u/codingisfun2831t), and [@e016](https://forum.snap.berkeley.edu/u/d016).
 
 # Loading in browser
 For now, CrackleSDK does not have any pages for it on common browser extension stores, so you will have to load it manually for your browser. I haven't put it on any stores as it isnt in a good enough state yet..
