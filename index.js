@@ -98,6 +98,18 @@ function deleteMod(id) {
   window.__crackle__.loadedMods = window.__crackle__.loadedMods.filter(
     (mod) => mod.id != id,
   );
+
+  // remove wraps
+  window.__crackle__.wrappedFunctions.forEach((value, key)=>{
+      if (value.functions[id]) {
+        delete value.functions[id];
+        if (Object.keys(value).length == 0) {
+          window.__crackle__.wrappedFunctions.delete(key)
+        }
+      }
+})
+
+  // remove autoload
   delete window.__crackle__.modCodes[id]
   if (!isNil(window.__crackle__.autoloadMods[id])) {
     deleteAutoloadMod(id)
@@ -269,6 +281,51 @@ function createApi(mod) {
       this.ide.inform(title || "Information", text);
     },
 
+    wrapFunction(originalFunction, wrapper) {
+    if (originalFunction[window.__crackle__.crackleSymbol]) {
+        originalFunction[window.__crackle__.crackleSymbol].functions[mod.id] = wrapper
+        return originalFunction
+    }
+
+    const FUNCTION_ID = Symbol('Function ID')
+
+    let proxy = new Proxy(
+        originalFunction,
+        {
+            apply (target, ctx, args) {
+                Reflect.apply(target, ctx, args) // This calls the original function
+                // target is the original function (original object)
+                // ctx is the ide object,
+                // args is the arguments that were passed into the function
+
+                // And then crackle will run all the functions that mods have defined
+                
+                let wrappers = window.__crackle__.wrappedFunctions.get(FUNCTION_ID)?.functions
+                if (wrappers) {
+                    for (let wrapper of Object.values(wrappers)) {
+                        wrapper.apply(ctx, args)
+                    }
+                }
+            },
+            get(target, property, receiver) {
+                if (property === window.__crackle__.crackleSymbol) {
+                    return window.__crackle__.wrappedFunctions.get(FUNCTION_ID)
+                }
+                return Reflect.get(target, property, receiver)
+            }
+        }
+    )
+    
+    window.__crackle__.wrappedFunctions.set(FUNCTION_ID, {
+        target: originalFunction,
+        functions: {
+            [mod.id]: wrapper,
+        },
+    })
+
+    return proxy
+},
+
     registerMenuHook(name, func) {
       mod.menuHooks.push({ name, func });
     },
@@ -311,12 +368,16 @@ function attachMenuHooks(ide) {
   };
 
   // projectMenu
-  IDE_Morph.prototype._projectMenu = IDE_Morph.prototype.projectMenu;
-  IDE_Morph.prototype.projectMenu = function () {
-    window.__crackle__.currentMenu = "projectMenu";
-    this._projectMenu();
-    window.__crackle__.currentMenu = null;
-  };
+  IDE_Morph.prototype.projectMenu = new Proxy(
+    IDE_Morph.prototype.projectMenu,
+    {
+        apply (target, ctx, args) {
+            window.__crackle__.currentMenu = "projectMenu";
+            Reflect.apply(...arguments) // This calls the original function
+            window.__crackle__.currentMenu = null;
+        }
+    }
+  );
 
   // settingsMenu
   IDE_Morph.prototype._settingsMenu = IDE_Morph.prototype.settingsMenu;
@@ -436,6 +497,8 @@ async function main() {
     extraApi: {},
     autoloadMods: {},
     modCodes: {},
+    crackleSymbol: Symbol("Crackle Data"),
+    wrappedFunctions: new Map(),
 
     // load a mod from code
     loadMod(code) {

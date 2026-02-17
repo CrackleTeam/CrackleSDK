@@ -39,6 +39,7 @@ This section describes the variables/functions in the `api` variable.
 * `showMsg` - Show a basic message to the user.
 * `addApi` - Add a "extra API" to the Crackle API. This is useful for libraries. This is added to new mods' `api` objects. (Note that this currently doesn't modify existing mods)
 * `inform` - Inform the user of something, with a title.
+* `wrapFunction` - Lets you add extra code that runs after a function. Crackle automatically discards each wrap when deleting a mod!
 * `registerMenuHook` - Attach a menu hook. First item is the name of the menu to hook, and the second is a function which takes in a MenuMorph and modifies it. Here are the menu names:
     * `projectMenu` - Menu from file button
     * `settingsMenu` - Menu from settings button
