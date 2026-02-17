@@ -5,7 +5,7 @@
   "description": "Modding framework for Snap! and its forks.",
   "content_scripts": [
     {
-      "matches": ["*://snap.berkeley.edu/snap/snap.html*", "*://mojavesoft.net/ide/snap*", "*://alessandrito123.github.io/Snavanced/snap.html*"],
+      "matches": ["*://snap.berkeley.edu/snap/snap.html*", "*://mojavesoft.net/ide/snap*", "*://mojavesoft.org/ide/snap*", "*://alessandrito123.github.io/Snavanced/snap.html*"],
       "js": [ "index.js" ],
       "world": "MAIN"
     }
