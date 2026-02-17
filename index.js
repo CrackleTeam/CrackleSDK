@@ -136,7 +136,8 @@ function manageLoadedMods() {
   const list = new ScrollFrameMorph();
   list.setColor(new Color(20, 20, 20));
   list.setExtent(new Point(400, 200));
-
+  list.acceptsDrops = false;
+  list.contents.acceptsDrops = false;
   const oddColor = new Color(20, 20, 20);
   const evenColor = new Color(40, 40, 40);
   let useOdd = false;
@@ -147,6 +148,7 @@ function manageLoadedMods() {
     const modMorph = new Morph();
     modMorph.setExtent(new Point(400, rowHeight));
     modMorph.setColor(useOdd ? oddColor : evenColor);
+
 
     const label = new TextMorph(`${mod.name} (${mod.id})`);
     label.setPosition(new Point(10, 5));
