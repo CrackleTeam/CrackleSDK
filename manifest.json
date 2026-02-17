@@ -5,9 +5,16 @@
   "description": "Modding framework for Snap! and its forks.",
   "content_scripts": [
     {
-      "matches": ["*://snap.berkeley.edu/snap/snap.html*", "*://mojavesoft.net/ide/snap*", "*://mojavesoft.org/ide/snap*"],
+      "matches": ["*://snap.berkeley.edu/snap/snap.html*", "*://mojavesoft.net/ide/snap*", "*://mojavesoft.org/ide/snap*", "*://alessandrito123.github.io/Snavanced/snap.html*"],
       "js": [ "index.js" ],
       "world": "MAIN"
     }
-  ]
+  ],
+
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  }
 }
