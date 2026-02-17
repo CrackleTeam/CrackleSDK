@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Crackle SDK",
+  "name": "Sparkle",
   "version": "1.0",
-  "description": "Modding framework for Snap!",
+  "description": "Modding framework for Snap! and its forks.",
   "content_scripts": [
     {
-      "matches": ["*://snap.berkeley.edu/snap/snap.html*"],
+      "matches": ["*://snap.berkeley.edu/snap/snap.html*", "*://mojavesoft.net/ide/snap*", "*://mojavesoft.org/ide/snap*"],
       "js": [ "index.js" ],
       "world": "MAIN"
     }
