@@ -111,6 +111,7 @@ function triggerModEvent(event) {
     ret = ret && mod.dispatchEvent(event);
   }
 
+  window.__crackle__.allEventTargets.forEach((element) => element.dispatchEvent(event))
   return ret;
 }
 
@@ -276,6 +277,12 @@ function createApi(mod) {
       mod.menuHooks.push({ name, func });
     },
 
+    registerEventTarget(target) {
+      window.__crackle__.allEventTargets.push(target);
+    },
+
+    sparkleEventTarget: new EventTarget(),
+
     ...window.__crackle__.extraApi,
   };
 }
@@ -434,11 +441,12 @@ async function main() {
   // create the __crackle__ object
   window.__crackle__ = {
     version: "1.0",
-    source: "https://github.com/CrackleTeam/CrackleSDK/releases/latest",
+    source: "https://github.com/Mojavesoft-Group/sparkle/releases",
     loadedMods: [],
     extraApi: {},
     autoloadMods: {},
     modCodes: {},
+    allEventTargets: [],
 
     // load a mod from code
     loadMod(code) {
@@ -457,6 +465,7 @@ async function main() {
       this.loadedMods.push(mod);
       this.modCodes[mod.id] = (code);
       addAutoloadMod(mod.id);
+      console.log(window.__crackle__.autoloadMods)
       saveAutoloadMods();
       return mod;
     },
@@ -500,7 +509,7 @@ async function main() {
         // the dialog with it.
         dlg.inform(
           "About Sparkle",
-          `Sparkle is a modding framework for Snap! and Jameson.\n` +
+          `Sparkle is a modding framework for Snap! and its forks.\n` +
             `Developed by tethrarxitet and codingisfun2831t with enhancements from PPPDUD.\n` +
             `Version ${window.__crackle__.version}.\n`,
           world,
@@ -561,8 +570,8 @@ async function main() {
       // action on click - show mod menu
       action() {
         const menu = new MenuMorph(modButton);
-        menu.addItem("About Crackle...", "about");
-        menu.addItem("Download Source...", "download");
+        menu.addItem("About Sparkle...", "about");
+        menu.addItem("Download source...", "download");
         menu.addLine();
         menu.addItem("Load mod from code...", "loadMod");
         menu.addItem("Load mod from file...", "loadModFile");
