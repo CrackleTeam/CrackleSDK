@@ -98,9 +98,10 @@ function deleteMod(id) {
   window.__crackle__.loadedMods = window.__crackle__.loadedMods.filter(
     (mod) => mod.id != id,
   );
-  delete window.__crackle__.modCodes[id]
+  delete window.__crackle__.modCodes[id];
+  removeEventTarget(id);
   if (!isNil(window.__crackle__.autoloadMods[id])) {
-    deleteAutoloadMod(id)
+    deleteAutoloadMod(id);
   }
 }
 
@@ -111,7 +112,7 @@ function triggerModEvent(event) {
     ret = ret && mod.dispatchEvent(event);
   }
 
-  window.__crackle__.allEventTargets.forEach((element) => element.dispatchEvent(event))
+  Object.values(window.__crackle__.allEventTargets).forEach((element) => element.dispatchEvent(event))
   return ret;
 }
 
@@ -253,6 +254,10 @@ function attachEventHandlers(ide) {
   };
 }
 
+function removeEventTarget(id) {
+  delete window.__crackle__.allEventTargets[id];
+}
+
 // Create the API object passed to mods
 function createApi(mod) {
   return {
@@ -278,7 +283,7 @@ function createApi(mod) {
     },
 
     registerEventTarget(target) {
-      window.__crackle__.allEventTargets.push(target);
+      window.__crackle__.allEventTargets[mod.id] = target;
     },
 
     sparkleEventTarget: new EventTarget(),
@@ -446,7 +451,7 @@ async function main() {
     extraApi: {},
     autoloadMods: {},
     modCodes: {},
-    allEventTargets: [],
+    allEventTargets: {},
 
     // load a mod from code
     loadMod(code) {
