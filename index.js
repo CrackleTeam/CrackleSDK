@@ -1,6 +1,6 @@
 /* 
-    CrackleSDK - A modding framework for Snap!
-    Copyright (C) 2025, developed by CrackleTeam
+    Sparkle - A modding framework for Snap! and its forks
+    Copyright (C) 2025-2026, developed by CrackleTeam with modifications from Mojavesoft
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -103,6 +103,16 @@ function deleteMod(id) {
   if (!isNil(window.__crackle__.autoloadMods[id])) {
     deleteAutoloadMod(id);
   }
+
+  // remove wraps
+  window.__crackle__.wrappedFunctions.forEach((value, key) => {
+    if (value.functions[id]) {
+      delete value.functions[id];
+      if (Object.keys(value).length == 0) {
+        window.__crackle__.wrappedFunctions.delete(key);
+      }
+    }
+  });
 }
 
 // Trigger an event on all loaded mods
@@ -112,7 +122,9 @@ function triggerModEvent(event) {
     ret = ret && mod.dispatchEvent(event);
   }
 
-  Object.values(window.__crackle__.allEventTargets).forEach((element) => element.dispatchEvent(event))
+  Object.values(window.__crackle__.allEventTargets).forEach((element) =>
+    element.dispatchEvent(event),
+  );
   return ret;
 }
 
@@ -124,6 +136,8 @@ function manageLoadedMods() {
   dlg.createLabel();
 
   const list = new ScrollFrameMorph();
+  list.acceptsDrops = false;
+  list.contents.acceptsDrops = false;
   list.setColor(new Color(20, 20, 20));
   list.setExtent(new Point(400, 200));
 
@@ -154,30 +168,6 @@ function manageLoadedMods() {
     infoButton.setPosition(new Point(label.right() + 5, 2));
     modMorph.addChild(infoButton);
 
-    /*const autoloadButton = new PushButtonMorph(
-      this,
-      () => {
-        if (isModAutoloaded(mod.id)) {
-          deleteAutoloadMod(mod.id);
-          saveAutoloadMods();
-          world.children[0].showMessage(`${mod.name} will no longer run on startup again.`);
-        } else {
-          addAutoloadMod(mod.id);
-          saveAutoloadMods();
-          world.children[0].showMessage(`${mod.name} will now run every time you open Snap!`);
-        }
-        autoloadButton.labelString = isModAutoloaded(mod.id) ? "Un-autoload" : "Autoload";
-        autoloadButton.createLabel();
-        autoloadButton.fixLayout();
-        modMorph.fixLayout();
-      },
-      isModAutoloaded(mod.id) ? "Un-autoload" : "Autoload",
-    );
-    autoloadButton.setColor(new Color(250, 250, 100));
-    autoloadButton.setPosition(new Point(infoButton.right() + 5, 2));
-    modMorph.addChild(autoloadButton);
-    */
-
     const deleteButton = new PushButtonMorph(
       this,
       () => {
@@ -194,9 +184,9 @@ function manageLoadedMods() {
     useOdd = !useOdd;
     modMorph.fixLayout = () => {
       infoButton.setLeft(label.right() + 5);
-     // autoloadButton.setLeft(infoButton.right() + 5);
+      // autoloadButton.setLeft(infoButton.right() + 5);
       deleteButton.setLeft(infoButton.right() + 5);
-    }
+    };
     return modMorph;
   }
 
@@ -233,7 +223,7 @@ function attachEventHandlers(ide) {
   };
 
   // categoryCreating and categoryCreated
-  ide._addPaletteCategory = ide.addPaletteCategory;
+  //ide._addPaletteCategory = ide.addPaletteCategory;
   ide.addPaletteCategory = function (name, color) {
     if (
       triggerModEvent(
@@ -286,6 +276,49 @@ function createApi(mod) {
       window.__crackle__.allEventTargets[mod.id] = target;
     },
 
+    wrapFunction(originalFunction, wrapper) {
+      if (originalFunction[window.__crackle__.crackleSymbol]) {
+        originalFunction[window.__crackle__.crackleSymbol].functions[mod.id] =
+          wrapper;
+        return originalFunction;
+      }
+
+      const FUNCTION_ID = Symbol("Function ID");
+
+      let proxy = new Proxy(originalFunction, {
+        apply(target, ctx, args) {
+          Reflect.apply(target, ctx, args); // This calls the original function
+          // target is the original function (original object)
+          // ctx is the ide object,
+          // args is the arguments that were passed into the function
+
+          // And then crackle will run all the functions that mods have defined
+
+          let wrappers =
+            window.__crackle__.wrappedFunctions.get(FUNCTION_ID)?.functions;
+          if (wrappers) {
+            for (let wrapper of Object.values(wrappers)) {
+              wrapper.apply(ctx, args);
+            }
+          }
+        },
+        get(target, property, receiver) {
+          if (property === window.__crackle__.crackleSymbol) {
+            return window.__crackle__.wrappedFunctions.get(FUNCTION_ID);
+          }
+          return Reflect.get(target, property, receiver);
+        },
+      });
+
+      window.__crackle__.wrappedFunctions.set(FUNCTION_ID, {
+        target: originalFunction,
+        functions: {
+          [mod.id]: wrapper,
+        },
+      });
+
+      return proxy;
+    },
     sparkleEventTarget: new EventTarget(),
 
     ...window.__crackle__.extraApi,
@@ -315,47 +348,47 @@ function attachMenuHooks(ide) {
   }
 
   // hook MenuMorph to call hooks for different menus
-  MenuMorph.prototype._popup = MenuMorph.prototype.popup;
-  MenuMorph.prototype.popup = function (world, pos) {
+  //MenuMorph.prototype._popup = MenuMorph.prototype.popup;
+  MenuMorph.prototype.popup = globalAPI.wrapFunction(MenuMorph.prototype.popup, function (world, pos) {
     if (this.target) {
       if (window.__crackle__.currentMenu)
         applyHooks(this, window.__crackle__.currentMenu);
     }
 
     return this._popup(world, pos);
-  };
+  });
 
   // projectMenu
-  IDE_Morph.prototype._projectMenu = IDE_Morph.prototype.projectMenu;
-  IDE_Morph.prototype.projectMenu = function () {
+  //IDE_Morph.prototype._projectMenu = IDE_Morph.prototype.projectMenu;
+  IDE_Morph.prototype.projectMenu = globalAPI.wrapFunction(IDE_Morph.prototype.projectMenu, function () {
     window.__crackle__.currentMenu = "projectMenu";
     this._projectMenu();
     window.__crackle__.currentMenu = null;
-  };
+  });
 
   // settingsMenu
-  IDE_Morph.prototype._settingsMenu = IDE_Morph.prototype.settingsMenu;
-  IDE_Morph.prototype.settingsMenu = function () {
+  //IDE_Morph.prototype._settingsMenu = IDE_Morph.prototype.settingsMenu;
+  IDE_Morph.prototype.settingsMenu = globalAPI.wrapFunction(IDE_Morph.prototype.settingsMenu, function () {
     window.__crackle__.currentMenu = "settingsMenu";
     this._settingsMenu();
     window.__crackle__.currentMenu = null;
-  };
+  });
 
   // cloudMenu
-  IDE_Morph.prototype._cloudMenu = IDE_Morph.prototype.cloudMenu;
-  IDE_Morph.prototype.cloudMenu = function () {
+  //IDE_Morph.prototype._cloudMenu = IDE_Morph.prototype.cloudMenu;
+  IDE_Morph.prototype.cloudMenu = globalAPI.wrapFunction(IDE_Morph.prototype.cloudMenu, function () {
     window.__crackle__.currentMenu = "cloudMenu";
     this._cloudMenu();
     window.__crackle__.currentMenu = null;
-  };
+  });
 
   // snapMenu
-  IDE_Morph.prototype._snapMenu = IDE_Morph.prototype.snapMenu;
-  IDE_Morph.prototype.snapMenu = function () {
+  //IDE_Morph.prototype._snapMenu = IDE_Morph.prototype.snapMenu;
+  IDE_Morph.prototype.snapMenu = globalAPI.wrapFunction(IDE_Morph.prototype.snapMenu, function () {
     window.__crackle__.currentMenu = "snapMenu";
     this._snapMenu();
     window.__crackle__.currentMenu = null;
-  };
+  });
 
   // scriptsMenu
   ScriptsMorph.prototype._userMenu = ScriptsMorph.prototype.userMenu;
@@ -395,7 +428,10 @@ function loadAutoloadMods() {
 }
 
 function saveAutoloadMods() {
-  localStorage.setItem("crackle_autoload_mods", JSON.stringify(window.__crackle__.autoloadMods));
+  localStorage.setItem(
+    "crackle_autoload_mods",
+    JSON.stringify(window.__crackle__.autoloadMods),
+  );
 }
 
 function addAutoloadMod(id) {
@@ -416,10 +452,10 @@ async function autoloadMods(ide) {
   window.__crackle__.autoloadMods = loadAutoloadMods();
 
   for (const id of Object.keys(window.__crackle__.autoloadMods)) {
-    var mod = window.__crackle__.autoloadMods[id]
+    var mod = window.__crackle__.autoloadMods[id];
     try {
-        // TODO: optional fetching of mods
-        window.__crackle__.loadMod(mod);
+      // TODO: optional fetching of mods
+      window.__crackle__.loadMod(mod);
     } catch (e) {
       ide.showMessage("Failed to autoload mod, check console for more info");
 
@@ -452,6 +488,8 @@ async function main() {
     autoloadMods: {},
     modCodes: {},
     allEventTargets: {},
+    crackleSymbol: Symbol("Crackle Data"),
+    wrappedFunctions: new Map(),
 
     // load a mod from code
     loadMod(code) {
@@ -468,9 +506,9 @@ async function main() {
 
       mod.main(createApi(mod));
       this.loadedMods.push(mod);
-      this.modCodes[mod.id] = (code);
+      this.modCodes[mod.id] = code;
       addAutoloadMod(mod.id);
-      console.log(window.__crackle__.autoloadMods)
+      console.log(window.__crackle__.autoloadMods);
       saveAutoloadMods();
       return mod;
     },
@@ -478,6 +516,7 @@ async function main() {
     currentMenu: null,
   };
 
+  window.globalAPI = createApi({ id: "globalAPI" }); // A global API instance for functions running outside of a mod's main() function. This pseudo-mod is never deleted until refresh, so it shouldn't be mutated unless strictly needed.
   // adjust the project label position to be after the mod button
   // this is needed because the fixLayout for the IDE doesnt know
   // about our new button, so it puts it after the normal place
@@ -521,7 +560,7 @@ async function main() {
         );
       },
       download() {
-        window.open(window.__crackle__.source, '_blank');
+        window.open(window.__crackle__.source, "_blank");
       },
 
       // dialog to load mod from code
@@ -616,14 +655,14 @@ async function main() {
       this.label.setExtent(
         new Point(
           this.steppingButton.left() - this.modButton.right() - 5 * 2,
-          this.label.children[0].height()
-        )
+          this.label.children[0].height(),
+        ),
       );
       this.label.children[0].setPosition(this.label.position());
     };
     controlBar.fixLayout_ = controlBar.fixLayout;
     controlBar.fixLayout = function () {
-      this.fixLayout_()
+      this.fixLayout_();
       this.modButton.setPosition(
         new Point(
           this.settingsButton.right() + BUTTON_OFFSET,
@@ -634,11 +673,13 @@ async function main() {
     adjustLabel(controlBar.modButton);
     controlBar.fixLayout();
   };
-  IDE_Morph.prototype.toggleAppMode_ = IDE_Morph.prototype.toggleAppMode
+  IDE_Morph.prototype.toggleAppMode_ = IDE_Morph.prototype.toggleAppMode;
   IDE_Morph.prototype.toggleAppMode = function (x) {
     this.toggleAppMode_(x);
-    this.isAppMode ? this.controlBar.modButton.hide() : this.controlBar.modButton.show()
-  }
+    this.isAppMode
+      ? this.controlBar.modButton.hide()
+      : this.controlBar.modButton.show();
+  };
   // create mod button
 
   ide.createModButton();
