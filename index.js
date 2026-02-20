@@ -456,6 +456,8 @@ async function main() {
           window.__crackle__.allEventTargets[mod.id] = target;
         },
 
+        crackleEventTarget: new EventTarget(),
+
         ...window.__crackle__.extraApi,
       };
     },
