@@ -26,6 +26,7 @@ If you were to click on the addon button, you'll see this menu popup:
 Here is what each of those options do:
 
 * `About Crackle...` - Display a dialog containing info about Crackle
+* `Download Source...` - Leads to the lastest release of Crackle
 * `Load mod from code...` - Load mod from direct code
 * `Load mod from file...` - Load mod from a file on your computer
 * `Manage loaded mods...` - Display a menu allowing you to see info or delete mods currently loaded
