@@ -309,6 +309,8 @@ async function main() {
       ret = ret && mod.dispatchEvent(event);
     }
 
+    Object.values(window.__crackle__.allEventTargets).forEach((element) => element.dispatchEvent(event))
+
     return ret;
   }
 
@@ -371,6 +373,7 @@ async function main() {
     extraApi: {},
     autoloadMods: {},
     modCodes: {},
+    allEventTargets: {},
     crackleSymbol: Symbol("Crackle Data"),
     wrappedFunctions: new Map(),
 
@@ -449,6 +452,10 @@ async function main() {
           mod.menuHooks.push({ name, func });
         },
 
+        registerEventTarget(target) {
+          window.__crackle__.allEventTargets[mod.id] = target;
+        },
+
         ...window.__crackle__.extraApi,
       };
     },
@@ -490,7 +497,7 @@ async function main() {
           }
         }
       });
-
+      delete window.__crackle__.allEventTargets[id];
       // remove autoload
       delete this.modCodes[id];
       if (!isNil(this.autoloadMods[id])) {
