@@ -159,108 +159,93 @@ class Mod extends EventTarget {
   }
 }
 
-// CrackleImportLibraryMorph ////////////////////////////////////////////////////////
-
 // I import mods from CrackleTeam/CrackleMods
+class CrackleImportLibraryMorph extends DialogBoxMorph {
+  constructor(environment, action) {
+    super(environment, action);
+    this.path =
+        "https://raw.githubusercontent.com/CrackleTeam/CrackleMods/refs/heads/master/";
+      this.labelString = "Import Mod";
+      this.key = "crackle import mods";
+      fetch(this.path + "mods.json")
+          .then((x) => x.json())
+          .then(
+            (list) => (
+              (this.librariesList = list),
+              this.buildContents(),
+              this.popUp(world)
+            ),
+          );
+  }
 
-// CrackleImportLibraryMorph inherits from DialogBoxMorph:
+  fixListFieldItemColors() {
+    // remember to always fixLayout() afterwards for the changes
+    // to take effect
+    this.mods.contents.children[0].alpha = 0;
+    this.mods.contents.children[0].children.forEach((item) => {
+      item.pressColor = this.titleBarColor.darker(20);
+      item.color = new Color(0, 0, 0, 0);
+      if (item.children[0]) {
+        item.children[0].color = this.mods.color.b < 128 ? WHITE : BLACK;
+      }
+    });
+  }
 
-CrackleImportLibraryMorph.prototype = new DialogBoxMorph();
-CrackleImportLibraryMorph.prototype.constructor = CrackleImportLibraryMorph;
-CrackleImportLibraryMorph.uber = DialogBoxMorph.prototype;
+  buildContents() {
+    this.container = new Morph();
+    this.container.alpha = 0;
+    this.mods = new ListMorph(
+      this.librariesList,
+      (element) =>
+        element.name + (element.version ? ` (${element.version})` : ""),
+      null,
+      null,
+      "~", // separator
+      false, // verbatim
+    );
+    this.mods.action = (lib) => (
+      (this.selected = lib),
+      (this.notesText.text = lib.description),
+      this.notesText.fixLayout(),
+      this.notesText.rerender()
+    );
+    this.mods.setWidth(200);
+    this.mods.setHeight(100);
+    this.mods.setColor(new Color(237, 237, 237));
+    this.fixListFieldItemColors();
 
-function CrackleImportLibraryMorph(environment, action) {
-  this.init(environment, action);
-}
+    this.notesText = new TextMorph("");
+    this.notesText.color = PushButtonMorph.prototype.labelColor;
 
-CrackleImportLibraryMorph.prototype.init = function (environment, action) {
-  CrackleImportLibraryMorph.uber.init.call(
-    this,
-    this, // target
-    action, // function
-    null, // environment
-  );
-  this.path =
-    "https://raw.githubusercontent.com/CrackleTeam/CrackleMods/refs/heads/master/";
-  this.labelString = "Import Mod";
-  this.key = "crackle import mods";
-  fetch(this.path + "mods.json")
-      .then((x) => x.json())
-      .then(
-        (list) => (
-          (this.librariesList = list),
-          this.buildContents(),
-          this.popUp(world)
-        ),
-      );
-};
+    this.notesField = new ScrollFrameMorph();
+    this.notesField.fixLayout = nop;
+    this.notesField.acceptsDrops = false;
+    this.notesField.contents.acceptsDrops = false;
+    this.notesField.isTextLineWrapping = true;
+    this.notesField.padding = 3;
+    this.notesField.setContents(this.notesText);
+    this.notesField.setHeight(100);
+    this.notesField.setWidth(200);
+    this.notesField.setLeft(this.mods.right() + 10);
+    this.notesField.color = new Color(237, 237, 237);
 
-CrackleImportLibraryMorph.prototype.fixListFieldItemColors = function () {
-  // remember to always fixLayout() afterwards for the changes
-  // to take effect
-  this.mods.contents.children[0].alpha = 0;
-  this.mods.contents.children[0].children.forEach((item) => {
-    item.pressColor = this.titleBarColor.darker(20);
-    item.color = new Color(0, 0, 0, 0);
-    if (item.children[0]) {
-      item.children[0].color = this.mods.color.b < 128 ? WHITE : BLACK;
-    }
-  });
-};
-CrackleImportLibraryMorph.prototype.buildContents = function () {
-  this.container = new Morph();
-  this.container.alpha = 0;
-  this.mods = new ListMorph(
-    this.librariesList,
-    (element) =>
-      element.name + (element.version ? ` (${element.version})` : ""),
-    null,
-    null,
-    "~", // separator
-    false, // verbatim
-  );
-  this.mods.action = (lib) => (
-    (this.selected = lib),
-    (this.notesText.text = lib.description),
-    this.notesText.fixLayout(),
-    this.notesText.rerender()
-  );
-  this.mods.setWidth(200);
-  this.mods.setHeight(100);
-  this.mods.setColor(new Color(237, 237, 237));
-  this.fixListFieldItemColors();
+    this.container.setWidth(this.mods.width() + 10 + this.notesField.width());
+    this.container.setHeight(100);
+    this.container.add(this.mods);
+    this.container.add(this.notesField);
 
-  this.notesText = new TextMorph("");
-  this.notesText.color = PushButtonMorph.prototype.labelColor;
-
-  this.notesField = new ScrollFrameMorph();
-  this.notesField.fixLayout = nop;
-  this.notesField.acceptsDrops = false;
-  this.notesField.contents.acceptsDrops = false;
-  this.notesField.isTextLineWrapping = true;
-  this.notesField.padding = 3;
-  this.notesField.setContents(this.notesText);
-  this.notesField.setHeight(100);
-  this.notesField.setWidth(200);
-  this.notesField.setLeft(this.mods.right() + 10);
-  this.notesField.color = new Color(237, 237, 237);
-
-  this.container.setWidth(this.mods.width() + 10 + this.notesField.width());
-  this.container.setHeight(100);
-  this.container.add(this.mods);
-  this.container.add(this.notesField);
-
-  this.createLabel();
-  this.addBody(this.container);
-  this.addButton(
-    () =>
-      fetch(this.path + "mods/" + this.selected.id + ".js")
-        .then((x) => x.text())
-        .then((mod) => (this.action(mod, this.selected.name), this.destroy())),
-    "Import",
-  );
-  this.addButton("cancel", "Cancel");
-  this.fixLayout();
+    this.createLabel();
+    this.addBody(this.container);
+    this.addButton(
+      () =>
+        fetch(this.path + "mods/" + this.selected.id + ".js")
+          .then((x) => x.text())
+          .then((mod) => (this.action(mod, this.selected.name), this.destroy())),
+      "Import",
+    );
+    this.addButton("cancel", "Cancel");
+    this.fixLayout();
+  }
 };
 
 // Main function
