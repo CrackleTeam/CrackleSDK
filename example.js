@@ -9,7 +9,10 @@ return {
     doMenu: true, // whether to add a menu item
 
     // Main function - gets ran when the mod is loaded
-    main(api) {
+    main() {
+        // allow access to the API in the menu functions and such, shortcut
+        let api = this.api;
+
         // Example adding a menu item - see morphic.js's MenuMorph
         // for more info on menus
         this.menu.addItem("Say hello", () => {

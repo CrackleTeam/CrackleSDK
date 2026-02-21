@@ -16,6 +16,82 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+// API for mods
+class API {
+  constructor(mod) {
+    this.mod = mod;
+    this.world = world;
+    this.ide = world.children[0];
+  }
+
+  showMsg(msg) {
+    this.ide.showMessage(msg);
+  }
+
+  addApi(name, obj) {
+    API.prototype[name] = obj;
+  }
+
+  inform(text, title) {
+    this.ide.inform(title || "Information", text);
+  }
+
+  wrapFunction(object, name, wrapper) {
+    originalFunction = object[name];
+    if (originalFunction[window.__crackle__.crackleSymbol]) {
+      originalFunction[window.__crackle__.crackleSymbol].functions[
+        this.mod.id
+      ] = wrapper;
+      return originalFunction;
+    }
+
+    const FUNCTION_ID = Symbol("Function ID");
+
+    let proxy = new Proxy(originalFunction, {
+      apply(target, ctx, args) {
+        if (
+          window.__crackle__.wrappedFunctions.get(FUNCTION_ID)?.overwrites
+            ?.length == 0
+        ) {
+          Reflect.apply(target, ctx, args); // This calls the original function
+        }
+        // target is the original function (original object)
+        // ctx is the ide object,
+        // args is the arguments that were passed into the function
+
+        // And then crackle will run all the functions that mods have defined
+
+        let wrappers =
+          window.__crackle__.wrappedFunctions.get(FUNCTION_ID)?.functions;
+        if (wrappers) {
+          for (let wrapper of Object.values(wrappers)) {
+            wrapper.apply(ctx, args);
+          }
+        }
+      },
+      get(target, property, receiver) {
+        if (property === window.__crackle__.crackleSymbol) {
+          return window.__crackle__.wrappedFunctions.get(FUNCTION_ID);
+        }
+        return Reflect.get(target, property, receiver);
+      },
+    });
+
+    window.__crackle__.wrappedFunctions.set(FUNCTION_ID, {
+      target: originalFunction,
+      functions: {
+        [this.mod.id]: wrapper,
+      },
+    });
+
+    object[name] = proxy;
+  }
+
+  registerMenuHook(name, func) {
+    this.mod.menuHooks.push({ name, func });
+  }
+}
+
 // A Mod, loaded from code
 class Mod extends EventTarget {
   constructor(code) {
@@ -63,12 +139,25 @@ class Mod extends EventTarget {
     } else {
       throw new Error("Mod code must return an object.");
     }
+
+    this.api = new API(this);
+  }
+
+  static findModById(id) {
+    return window.__crackle__.loadedMods.find((mod) => mod.id == id);
+  }
+
+  static dispatchEvent(event) {
+    let ret = true;
+    for (const mod of window.__crackle__.loadedMods) {
+      ret = ret && mod.dispatchEvent(event);
+    }
+
+    Object.values(window.__crackle__.allEventTargets).forEach((element) => element.dispatchEvent(event))
+
+    return ret;
   }
 }
-
-Mod.prototype.findModById = function (id) {
-  return window.__crackle__.loadedMods.find((mod) => mod.id == id);
-};
 
 // CrackleImportLibraryMorph ////////////////////////////////////////////////////////
 
@@ -277,18 +366,6 @@ async function main() {
     };
   }
 
-  // Trigger an event on all loaded mods
-  function triggerModEvent(event) {
-    let ret = true;
-    for (const mod of window.__crackle__.loadedMods) {
-      ret = ret && mod.dispatchEvent(event);
-    }
-
-    Object.values(window.__crackle__.allEventTargets).forEach((element) => element.dispatchEvent(event))
-
-    return ret;
-  }
-
   // Attach event handlers to the IDE for mod events
   function attachEventHandlers(ide) {
     // projectCreating and projectCreated
@@ -300,11 +377,11 @@ async function main() {
     ide.createNewProject = function () {
       this.backup(() => {
         if (
-          triggerModEvent(new Event("projectCreating", { cancelable: true }))
+          Mod.dispatchEvent(new Event("projectCreating", { cancelable: true }))
         ) {
           this.newProject();
 
-          triggerModEvent(new Event("projectCreated"));
+          Mod.dispatchEvent(new Event("projectCreated"));
         }
       });
     };
@@ -313,7 +390,7 @@ async function main() {
     ide._addPaletteCategory = ide.addPaletteCategory;
     ide.addPaletteCategory = function (name, color) {
       if (
-        triggerModEvent(
+        Mod.dispatchEvent(
           new CustomEvent("categoryCreating", {
             cancelable: true,
             detail: { name, color },
@@ -322,7 +399,7 @@ async function main() {
       ) {
         this._addPaletteCategory(name, color);
 
-        triggerModEvent(
+        Mod.dispatchEvent(
           new CustomEvent("categoryCreated", {
             detail: { name, color },
           }),
@@ -352,91 +429,6 @@ async function main() {
     crackleSymbol: Symbol("Crackle Data"),
     wrappedFunctions: new Map(),
 
-    // Create the API object passed to mods
-    createApi(mod) {
-      return {
-        _mod: mod,
-        ide: world.children[0],
-        world: world,
-
-        showMsg(msg) {
-          this.ide.showMessage(msg);
-        },
-
-        addApi(name, obj) {
-          window.__crackle__.extraApi[name] = obj;
-          this[name] = obj;
-        },
-
-        inform(text, title) {
-          this.ide.inform(title || "Information", text);
-        },
-
-        wrapFunction(object, name, wrapper) {
-          originalFunction = object[name];
-          if (originalFunction[window.__crackle__.crackleSymbol]) {
-            originalFunction[window.__crackle__.crackleSymbol].functions[
-              mod.id
-            ] = wrapper;
-            return originalFunction;
-          }
-
-          const FUNCTION_ID = Symbol("Function ID");
-
-          let proxy = new Proxy(originalFunction, {
-            apply(target, ctx, args) {
-              if (
-                window.__crackle__.wrappedFunctions.get(FUNCTION_ID)?.overwrites
-                  ?.length == 0
-              ) {
-                Reflect.apply(target, ctx, args); // This calls the original function
-              }
-              // target is the original function (original object)
-              // ctx is the ide object,
-              // args is the arguments that were passed into the function
-
-              // And then crackle will run all the functions that mods have defined
-
-              let wrappers =
-                window.__crackle__.wrappedFunctions.get(FUNCTION_ID)?.functions;
-              if (wrappers) {
-                for (let wrapper of Object.values(wrappers)) {
-                  wrapper.apply(ctx, args);
-                }
-              }
-            },
-            get(target, property, receiver) {
-              if (property === window.__crackle__.crackleSymbol) {
-                return window.__crackle__.wrappedFunctions.get(FUNCTION_ID);
-              }
-              return Reflect.get(target, property, receiver);
-            },
-          });
-
-          window.__crackle__.wrappedFunctions.set(FUNCTION_ID, {
-            target: originalFunction,
-            functions: {
-              [mod.id]: wrapper,
-            },
-          });
-
-          object[name] = proxy;
-        },
-
-        registerMenuHook(name, func) {
-          mod.menuHooks.push({ name, func });
-        },
-
-        registerEventTarget(target) {
-          window.__crackle__.allEventTargets[mod.id] = target;
-        },
-
-        crackleEventTarget: new EventTarget(),
-
-        ...window.__crackle__.extraApi,
-      };
-    },
-
     // load a mod from code
     loadMod(code) {
       const mod = new Mod(code);
@@ -448,17 +440,17 @@ async function main() {
         this.deleteMod(mod.id);
       }
 
-      mod.main(this.createApi(mod));
       this.loadedMods.push(mod);
       this.modCodes[mod.id] = code;
       this.autoload.add(mod.id);
+      mod.main();
 
       return mod;
     },
 
     // Delete a mod by its ID
     deleteMod(id) {
-      let mod = Mod.prototype.findModById(id);
+      let mod = Mod.findModById(id);
       mod.cleanupFuncs.forEach((func) => func());
 
       window.__crackle__.loadedMods = window.__crackle__.loadedMods.filter(
@@ -484,7 +476,7 @@ async function main() {
 
     autoload: {
       load() {
-        const data = localStorage.getItem("crackle_autoload_mods");
+        let data = localStorage.getItem("crackle_autoload_mods");
         if (!data || data == "[]")
           (localStorage.setItem("crackle_autoload_mods", "{}"), (data = {}));
 
