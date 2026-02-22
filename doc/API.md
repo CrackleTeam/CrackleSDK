@@ -50,33 +50,6 @@ This section describes the variables/functions in the `api` member variable.
 ## `this` in `main`
 The object stored in `this` when you call main is actually NOT the object you returned. Yes, most of it is copied, but its actually a `Mod` object (see `index.js`). This mod object actually supports events, by using EventTarget. You can `addEventListener` and such, just like DOM elements. The section following contains those events you can attach to.
 
-## Tips
-What follows are several "tips" on modding.
-
-### 1. Hooking
-One thing you might want to do in your modding journey is do something (in your own code) when a Snap! function is called. The easiest way to do this is to keep a copy of the old function in the object's prototype, replace the main function of it, call that old function first, last, or in the middle somewhere, and then finally do your code. Heres a example with `StageMorph.prototype.setScale`:
-```js
-StageMorph.prototype._setScale = StageMorph.prototype.setScale;
-
-StageMorph.prototype.setScale = function (scale) {
-    this._setScale(scale);
-
-    console.log("New stage scale: " + scale.toString);
-}
-```
-
-And then, you can also implement a function to delete that hook in your `cleanupFuncs`:
-```js
-() => {
-    StageMorph.prototype.setScale = StageMorph.prototype._setScale;
-
-    delete StageMorph.prototype._setScale;
-}
-```
-The `delete` part is optional.
-
-Hooking is one of the most useful skills in modding, and its a good thing to learn it for the future. Even if you want to implement a new feature, but want to include in one of the Snap! menus - you'd will have to do some hooking. Even though that is one of the harder things to do - maybe eventually we should have a API for adding new stuff to common Snap! menus.
-
 ### Events
 * `projectCreating` - Triggered whenever the current project is about to be replaced with a new one. You can cancel this action by calling "preventDefault" on it.
 * `projectCreated` - Triggered after a project is created, if it was not cancelled by another event
