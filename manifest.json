@@ -5,7 +5,11 @@
   "description": "Modding framework for Snap!",
   "content_scripts": [
     {
-      "matches": ["*://snap.berkeley.edu/snap/snap.html*"],
+      "matches": [
+        "*://snap.berkeley.edu/snap/snap.html",
+        "*://e016.github.io/split-mod/split.html",
+        "*://codingisfun2831t.github.io/split-mod-prs/split.html"
+      ],
       "js": [ "index.js" ],
       "world": "MAIN"
     }

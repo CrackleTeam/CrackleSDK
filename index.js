@@ -16,6 +16,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+console.log("CrackleSDK is loading...");
+
 // API for mods
 class API {
   constructor(mod) {
@@ -248,6 +250,22 @@ class CrackleImportLibraryMorph extends DialogBoxMorph {
   }
 };
 
+const ThisSnap = (function() {
+  // Split?
+  if (typeof SplitVersion !== "undefined") {
+    return {
+      snap: "Split",
+      version: SplitVersion
+    };
+  }
+
+  // default to Snap
+  return {
+    snap: "Snap",
+    version: SnapVersion
+  }
+})();
+
 // Main function
 async function main() {
   const BUTTON_OFFSET = 5; // pixels between buttons
@@ -413,6 +431,21 @@ async function main() {
     allEventTargets: {},
     crackleSymbol: Symbol("Crackle Data"),
     wrappedFunctions: new Map(),
+    snap: (function() {
+      // Split?
+      if (typeof SplitVersion !== "undefined") {
+        return {
+          snap: "Split",
+          version: SplitVersion
+        };
+      }
+
+      // default to Snap
+      return {
+        snap: "Snap",
+        version: SnapVersion
+      }
+    })(),
 
     // load a mod from code
     loadMod(code) {
@@ -526,13 +559,18 @@ async function main() {
   // create mod button
   IDE_Morph.prototype.createModButton = function () {
     var controlBar = this.controlBar;
+    var modButton;
     if (controlBar.modButton) {
       controlBar.modButton.destroy();
     }
-    var modButton = controlBar.settingsButton.fullCopy();
-    controlBar.modButton = modButton;
-    console.warn(controlBar.modButton);
-    controlBar.addChild(modButton);
+
+    if (window.__crackle__.snap.snap == "Split" || window.__crackle__.snap.snap) {
+      var modButton = controlBar.settingsButton.fullCopy();
+      controlBar.modButton = modButton;
+      console.warn(controlBar.modButton);
+      controlBar.addChild(modButton);
+    }
+    
 
     // add functionality to mod button
     Object.assign(modButton, {
@@ -801,6 +839,14 @@ async function main() {
 
     // customize the button appearance
     modButton.children[0].name = "cross";
+    
+    if (window.__crackle__.snap.snap === "Split") {
+      modButton.children[1].text = "Mods";
+      modButton.children[1].fixLayout();
+      modButton.children[2].setLeft(modButton.children[1].right() + 5);
+      modButton.setWidth(30 + modButton.children.reduce((sum, child) => sum + child.width(), 0));
+    }
+
     controlBar.modButton = modButton;
     const originalUpdateLabel = controlBar.updateLabel;
     controlBar.updateLabel = function () {
@@ -811,21 +857,27 @@ async function main() {
           this.label.top(),
         ),
       );
-      this.label.setExtent(
-        new Point(
-          this.steppingButton.left() - this.modButton.right() - 5 * 2,
-          this.label.children[0].height(),
-        ),
-      );
-      this.label.children[0].setPosition(this.label.position());
+
+      if (window.__crackle__.snap.snap !== "Split") {
+        this.label.setExtent(
+          new Point(
+            this.steppingButton.left() - this.modButton.right() - 5 * 2,
+            this.label.children[0].height(),
+          ),
+        );
+
+        this.label.children[0].setPosition(this.label.position());
+      }
     };
     controlBar.fixLayout_ = controlBar.fixLayout;
     controlBar.fixLayout = function () {
       this.fixLayout_();
+
+      let btn = window.__crackle__.snap.snap == "Split" ? this.editButton : this.settingsButton;
       this.modButton.setPosition(
         new Point(
-          this.settingsButton.right() + BUTTON_OFFSET,
-          this.settingsButton.top(),
+          btn.right() + BUTTON_OFFSET,
+          btn.top(),
         ),
       );
     };
