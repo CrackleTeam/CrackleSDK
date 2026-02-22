@@ -55,3 +55,14 @@ The object stored in `this` when you call main is actually NOT the object you re
 * `projectCreated` - Triggered after a project is created, if it was not cancelled by another event
 * `categoryCreating` - Triggered whenever a new category is about to be created. You can cancel this action by calling "preventDefault" on it. The 'detail' property of the event object contains the `name` and `color` (Color) of the category.
 * `categoryCreated` - Triggered after a category is created, if it was not cancelled by another event. 'detail' is the same as categoryCreating.
+
+## "Snap" detection
+One very interesting feature in CrackleSDK is its cross-modness. This means, that not only can you run Crackle and make mods for Snap!, you can also use it on other Snap! mods!
+
+The current term for a Snap! mod (including Snap! itself) is simply a "Snap". Currently we only support Snap! and Split, if you have created a mod and want detection for it, simply create a issue and we'll get on it!
+
+There are functions that allow you to require, suggest OR disallow a specfic Snap!. For example, if you are making a mod for Split that should only be supported on Split, you can call `requireSnaps`. Here are the functions you can use (all of these can take multiple params, for each snap):
+
+* `requireSnaps`: Require either one of a set of snaps to run your mod
+* `suggestSnaps`: Suggest a list of snaps that would work perfectly with your mod
+* `disallowSnaps`: Disallow a list of snaps that your mod doesn't support. (e.g. better-flat-design, which wont work with Split as Split already has good flat design)

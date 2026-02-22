@@ -18,12 +18,21 @@
 
 console.log("CrackleSDK is loading...");
 
+function commaOr(...items) {
+  if (items.length == 0) return "";
+  if (items.length == 1) return items[0];
+  if (items.length == 2) return items[0] + " or " + items[1];
+
+  return items.slice(0, -1).join(", ") + " or " + items[items.length - 1];
+}
+
 // API for mods
 class API {
   constructor(mod) {
     this.mod = mod;
     this.world = world;
     this.ide = world.children[0];
+    this.snap = window.__crackle__.snap;
   }
 
   showMsg(msg) {
@@ -91,6 +100,29 @@ class API {
 
   registerMenuHook(name, func) {
     this.mod.menuHooks.push({ name, func });
+  }
+
+  requireSnaps(...names) {
+    if (!names.includes(this.snap.snap)) {
+      let msg = `Mod "${this.mod.name}" requires ${commaOr(...names)}, but you are using ${this.snap.snap}.`;
+      this.inform(msg, "Incompatible Snap");
+      throw new Error("snap not compatible");
+    }
+  }
+
+  suggestSnaps(...names) {
+    if (!names.includes(this.snap.snap)) {
+      this.inform(`This mod is designed for ${commaOr(...names)}, but you are using ${this.snap.snap}.
+      The mod might still work, continue at your own risk.`, "Snap Suggestion");
+    }
+  }
+
+  disallowSnaps(...names) {
+    if (names.includes(this.snap.snap)) {
+      let msg = `Mod "${this.mod.name}" does not work with ${this.snap.snap}!`;
+      this.inform(msg, "Incompatible Snap");
+      throw new Error("snap not compatible");
+    }
   }
 }
 
@@ -249,22 +281,6 @@ class CrackleImportLibraryMorph extends DialogBoxMorph {
     this.fixLayout();
   }
 };
-
-const ThisSnap = (function() {
-  // Split?
-  if (typeof SplitVersion !== "undefined") {
-    return {
-      snap: "Split",
-      version: SplitVersion
-    };
-  }
-
-  // default to Snap
-  return {
-    snap: "Snap",
-    version: SnapVersion
-  }
-})();
 
 // Main function
 async function main() {
