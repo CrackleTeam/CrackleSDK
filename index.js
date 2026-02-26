@@ -502,8 +502,8 @@ async function main() {
       }
     })(),
 
-    // load a mod from code
-    loadMod(code, autoload) {
+    // load a mod from code, TEMPORARY. use addMod for loading normal mods from the menu or download.
+    loadMod(code) {
       const mod = new Mod(code);
 
       if (this.loadedMods.some((element) => element.id == mod.id)) {
@@ -515,12 +515,15 @@ async function main() {
 
       this.loadedMods.push(mod);
       this.modCodes[mod.id] = code;
-      if (window.__crackle__.doAutoload || autoload) {
-        this.autoload.add(mod.id);
-      }
       mod.main();
 
       return mod;
+    },
+
+    // load a mod and save it across runs
+    addMod(code) {
+      const mod = this.loadMod(code);
+      this.autoload.add(mod.id);
     },
 
     // Delete a mod by its ID
@@ -739,12 +742,18 @@ async function main() {
       },
 
       // dialog to load mod from code
-      loadMod() {
+      loadMod(temporary = false) {
         new DialogBoxMorph(
           this,
           (input) => {
+            let mod;
+
             try {
-              window.__crackle__.loadMod(input);
+              if (temporary) {
+                mod = window.__crackle__.loadMod(input);
+              } else {
+                mod = window.__crackle__.addMod(input);
+              }
               ide.showMessage(`Mod loaded successfully!`);
             } catch (e) {
               ide.showMessage(
@@ -762,7 +771,7 @@ async function main() {
       },
 
       // load mod from file, uses file input
-      loadModFile() {
+      loadModFile(temporary = false) {
         const input = document.createElement("input");
         input.type = "file";
         input.accept = ".js,text/javascript,application/javascript";
@@ -771,8 +780,13 @@ async function main() {
           if (!file) return;
           const reader = new FileReader();
           reader.onload = (e) => {
+            let mod;
             try {
-              let mod = window.__crackle__.loadMod(e.target.result);
+              if (temporary) {
+                mod = window.__crackle__.loadMod(e.target.result);
+              } else {
+                mod = window.__crackle__.addMod(e.target.result);
+              }
               ide.showMessage(`Mod "${mod.name}" loaded successfully!`);
             } catch (e) {
               ide.showMessage(`Failed to load mod:\n${e}`);
@@ -900,18 +914,27 @@ async function main() {
       // action on click - show mod menu
       action() {
         const menu = new MenuMorph(modButton);
+        const world = this.world();
         menu.addItem("About Crackle...", "about");
         menu.addItem("Crackle Settings...", "settings");
         menu.addItem("Download Source...", "download");
         menu.addLine();
         menu.addItem("Download mods...", () => {
           new CrackleImportLibraryMorph(this, (code, name) => {
-            window.__crackle__.loadMod(code);
+            window.__crackle__.addMod(code);
             world.children[0].showMessage(`${name} Loaded`);
           });
         }); // not yet... we need MODS.json
         menu.addItem("Load mod from code...", "loadMod");
         menu.addItem("Load mod from file...", "loadModFile");
+        if (world.currentKey === 16) { // shift
+          menu.addLine();
+          menu.addItem("Load temporary mod from code...", () => modButton.loadMod(true),
+            "load a temporary mod from code, mainly for development", new Color(100, 0, 0));
+          menu.addItem("Load temporary mod from file...", () => modButton.loadModFile(true),
+            "load a temporary mod from file, mainly for development", new Color(100, 0, 0));
+        }
+        menu.addLine();
         menu.addItem("Manage loaded mods...", "manageLoadedMods");
 
         let menus = {};
