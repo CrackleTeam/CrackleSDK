@@ -335,36 +335,52 @@ async function main() {
     );
 
     // settingsMenu
-    IDE_Morph.prototype._settingsMenu = IDE_Morph.prototype.settingsMenu;
-    IDE_Morph.prototype.settingsMenu = function () {
-      window.__crackle__.currentMenu = "settingsMenu";
-      this._settingsMenu();
-      window.__crackle__.currentMenu = null;
-    };
+    IDE_Morph.prototype.settingsMenu = new Proxy(
+      IDE_Morph.prototype.settingsMenu,
+      {
+        apply(target, ctx, args) {
+          window.__crackle__.currentMenu = "settingsMenu";
+          Reflect.apply(...arguments); // This calls the original function
+          window.__crackle__.currentMenu = null;
+        },
+      },
+    );
 
     // cloudMenu
-    IDE_Morph.prototype._cloudMenu = IDE_Morph.prototype.cloudMenu;
-    IDE_Morph.prototype.cloudMenu = function () {
-      window.__crackle__.currentMenu = "cloudMenu";
-      this._cloudMenu();
-      window.__crackle__.currentMenu = null;
-    };
+    IDE_Morph.prototype.cloudMenu = new Proxy(
+      IDE_Morph.prototype.cloudMenu,
+      {
+        apply(target, ctx, args) {
+          window.__crackle__.currentMenu = "cloudMenu";
+          Reflect.apply(...arguments); // This calls the original function
+          window.__crackle__.currentMenu = null;
+        },
+      },
+    );
 
     // snapMenu
-    IDE_Morph.prototype._snapMenu = IDE_Morph.prototype.snapMenu;
-    IDE_Morph.prototype.snapMenu = function () {
-      window.__crackle__.currentMenu = "snapMenu";
-      this._snapMenu();
-      window.__crackle__.currentMenu = null;
-    };
+    IDE_Morph.prototype.snapMenu = new Proxy(
+      IDE_Morph.prototype.snapMenu,
+      {
+        apply(target, ctx, args) {
+          window.__crackle__.currentMenu = "snapMenu";
+          Reflect.apply(...arguments); // This calls the original function
+          window.__crackle__.currentMenu = null;
+        },
+      },
+    );
 
     // scriptsMenu
-    ScriptsMorph.prototype._userMenu = ScriptsMorph.prototype.userMenu;
-    ScriptsMorph.prototype.userMenu = function () {
-      let menu = this._userMenu();
-      applyHooks(menu, "scriptsMenu");
-      return menu;
-    };
+    ScriptsMorph.prototype.scriptsMenu = new Proxy(
+      ScriptsMorph.prototype.scriptsMenu,
+      {
+        apply(target, ctx, args) {
+          window.__crackle__.currentMenu = "scriptsMenu";
+          Reflect.apply(...arguments); // This calls the original function
+          window.__crackle__.currentMenu = null;
+        },
+      },
+    );
 
     // paletteMenu
     //
@@ -373,19 +389,35 @@ async function main() {
     //
     // TODO: Remove any palette cache on hooks of this
     // and refresh the current palette
-    SpriteMorph.prototype._freshPalette = SpriteMorph.prototype.freshPalette;
-    SpriteMorph.prototype.freshPalette = function (category) {
-      let palette = this._freshPalette(category);
+    ScriptsMorph.prototype.freshPalette = new Proxy(
+      ScriptsMorph.prototype.freshPalette,
+      {
+        apply(target, ctx, args) {
+          window.__crackle__.currentMenu = "freshPalette";
+          Reflect.apply(...arguments); // This calls the original function
+          window.__crackle__.currentMenu = null;
+        },
+      },
+    );
 
-      palette._userMenu = palette.userMenu;
-      palette.userMenu = function () {
-        let menu = this._userMenu();
-        applyHooks(menu, "paletteMenu");
-        return menu;
-      };
+    SpriteMorph.prototype.freshPalette = new Proxy(
+      SpriteMorph.prototype.freshPalette,
+      {
+        apply(target, ctx, args) {
+          let palette = Reflect.apply(...arguments); // This calls the original function
 
-      return palette;
-    };
+          palette.userMenu = new Proxy(palette.userMenu, {
+            apply(target, ctx, args) {
+              let menu = Reflect.apply(...arguments);
+              applyHooks(menu, "paletteMenu");
+              return menu
+            }  
+          });
+
+          return palette;
+        },
+      },
+    );
   }
 
   // Attach event handlers to the IDE for mod events
@@ -409,25 +441,29 @@ async function main() {
     };
 
     // categoryCreating and categoryCreated
-    ide._addPaletteCategory = ide.addPaletteCategory;
-    ide.addPaletteCategory = function (name, color) {
-      if (
+    IDE_Morph.prototype.addPaletteCategory = new Proxy(
+      IDE_Morph.prototype.addPaletteCategory,
+      {
+        apply(target, ctx, args) {
+          if (
         Mod.dispatchEvent(
           new CustomEvent("categoryCreating", {
             cancelable: true,
-            detail: { name, color },
+            detail: { name: args[0], color: args[1] },
           }),
         )
       ) {
-        this._addPaletteCategory(name, color);
+        Reflect.apply(...arguments); // This calls the original function
 
         Mod.dispatchEvent(
           new CustomEvent("categoryCreated", {
-            detail: { name, color },
+            detail: { name: args[0], color: args[1] },
           }),
         );
       }
-    };
+        },
+      },
+    );
   }
   await waitForSnapReady();
   const ide = world.children[0];
@@ -929,36 +965,47 @@ async function main() {
         this.label.children[0].setPosition(this.label.position());
       }
     };
-    controlBar.fixLayout_ = controlBar.fixLayout;
-    controlBar.fixLayout = function () {
-      this.fixLayout_();
-
-      let btn = window.__crackle__.snap.snap == "Split" ? this.editButton : this.settingsButton;
-      this.modButton.setPosition(
-        new Point(
-          btn.right() + BUTTON_OFFSET,
-          btn.top(),
-        ),
-      );
-    };
+    controlBar.fixLayout = new Proxy(
+      controlBar.fixLayout,
+      {
+        apply(target, ctx, args) {
+            Reflect.apply(...arguments);
+            let btn = window.__crackle__.snap.snap == "Split" ? ctx.editButton : ctx.settingsButton;
+            ctx.modButton.setPosition(
+            new Point(
+            btn.right() + BUTTON_OFFSET,
+            btn.top(),
+          ),
+        );
+        },
+      },
+    );
     adjustLabel(controlBar.modButton);
     controlBar.fixLayout();
   };
-  IDE_Morph.prototype.toggleAppMode___ = IDE_Morph.prototype.toggleAppMode;
-  IDE_Morph.prototype.toggleAppMode = function (x) {
-    this.toggleAppMode___(x);
-    this.isAppMode
-      ? this.controlBar.modButton.hide()
-      : this.controlBar.modButton.show();
-  };
+  IDE_Morph.prototype.toggleAppMode = new Proxy(
+      IDE_Morph.prototype.toggleAppMode,
+      {
+        apply(target, ctx, args) {
+          Reflect.apply(...arguments);
+          ctx.isAppMode
+            ? ctx.controlBar.modButton.hide()
+            : ctx.controlBar.modButton.show();
+        },
+      },
+    );
   // create mod button
-
+  
   ide.createModButton();
-  ide.createControlBar_ = ide.createControlBar;
-  ide.createControlBar = function () {
-    this.createControlBar_.call(this);
-    this.createModButton();
-  };
+  ide.createControlBar = new Proxy(
+      ide.createControlBar,
+      {
+        apply(target, ctx, args) {
+          Reflect.apply(...arguments);
+          ctx.createModButton();
+        },
+      },
+    );
 
   // attach final things
   attachEventHandlers(ide);
