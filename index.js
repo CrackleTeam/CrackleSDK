@@ -47,8 +47,8 @@ class API {
     this.ide.inform(title || "Information", text);
   }
 
-  wrapFunction(object, name, wrapper) {
-    originalFunction = object[name];
+  wrapFunction(object, name, wrapper, overwrite) {
+    var originalFunction = object[name];
     if (originalFunction[window.__crackle__.crackleSymbol]) {
       originalFunction[window.__crackle__.crackleSymbol].functions[
         this.mod.id
@@ -87,13 +87,16 @@ class API {
         return Reflect.get(target, property, receiver);
       },
     });
-
-    window.__crackle__.wrappedFunctions.set(FUNCTION_ID, {
+    var wrapData = {
       target: originalFunction,
       functions: {
         [this.mod.id]: wrapper,
-      },
-    });
+      }
+    }
+    if (overwrite) {
+      wrapData.overwrites = [this.mod.id];
+    }
+    window.__crackle__.wrappedFunctions.set(FUNCTION_ID, wrapData);
 
     object[name] = proxy;
   }
@@ -464,7 +467,7 @@ async function main() {
     })(),
 
     // load a mod from code
-    loadMod(code) {
+    loadMod(code, autoload) {
       const mod = new Mod(code);
 
       if (this.loadedMods.some((element) => element.id == mod.id)) {
@@ -476,7 +479,9 @@ async function main() {
 
       this.loadedMods.push(mod);
       this.modCodes[mod.id] = code;
-      this.autoload.add(mod.id);
+      if (window.__crackle__.doAutoload || autoload) {
+        this.autoload.add(mod.id);
+      }
       mod.main();
 
       return mod;
@@ -495,6 +500,7 @@ async function main() {
       window.__crackle__.wrappedFunctions.forEach((value, key) => {
         if (value.functions[id]) {
           delete value.functions[id];
+          value.overwrites = value.overwrites.filter((modId) => modId != id);
           if (Object.keys(value).length == 0) {
             window.__crackle__.wrappedFunctions.delete(key);
           }
@@ -544,7 +550,7 @@ async function main() {
           var mod = window.__crackle__.autoloadMods[id];
           try {
             // TODO: optional fetching of mods
-            window.__crackle__.loadMod(mod);
+            window.__crackle__.loadMod(mod, true);
           } catch (e) {
             ide.showMessage(
               "Failed to autoload mod, check console for more info",
@@ -555,9 +561,24 @@ async function main() {
         }
       },
     },
+    doAutoload: true,
+    toggleAutoload() {
+      window.__crackle__.doAutoload = !window.__crackle__.doAutoload;
+      this.saveSettings();
+    },
+    loadSettings() {
+      var settings = JSON.parse(localStorage.getItem("crackle_settings") || "{}");
+      this.doAutoload = settings.doAutoload !== false;
+    },
+    saveSettings() {
+      localStorage.setItem("crackle_settings", JSON.stringify({
+        doAutoload: window.__crackle__.doAutoload
+      }));
+    },
 
     currentMenu: null,
   };
+  window.__crackle__.loadSettings();
 
   // adjust the project label position to be after the mod button
   // this is needed because the fixLayout for the IDE doesnt know
@@ -654,6 +675,28 @@ async function main() {
             `Version ${window.__crackle__.version}\n`,
           world,
         );
+      },
+      settings() {
+        var dlg = new DialogBoxMorph(),
+        body = new AlignmentMorph('column', 5);
+
+        var autoload = new ToggleMorph(
+            'checkbox',
+            dlg,
+            () => window.__crackle__.toggleAutoload(), // action,
+            "Automatically Autoload Mods", // label
+            () => window.__crackle__.doAutoload //query
+        );
+        body.add(autoload);
+        body.fixLayout();
+
+        dlg.key = "settings";
+        dlg.labelString = "Crackle Settings";
+        dlg.createLabel();
+        dlg.addBody(body);
+        dlg.addButton('ok', 'OK');
+        dlg.fixLayout();
+        dlg.popUp(world);
       },
       download() {
         window.open(window.__crackle__.source, "_blank");
@@ -780,26 +823,26 @@ async function main() {
           );
           autoloadButton.setColor(new Color(250, 250, 100));
           autoloadButton.setPosition(new Point(infoButton.right() + 5, 2));
-          // modMorph.addChild(autoloadButton);
+          modMorph.addChild(autoloadButton);
 
           const deleteButton = new PushButtonMorph(
             this,
             () => {
               window.__crackle__.deleteMod(mod.id);
               dlg.destroy();
-              window.__crackle__.manageLoadedMods(); // reopen with refreshed list
+             modButton.manageLoadedMods(); // reopen with refreshed list
             },
             "Delete",
           );
           deleteButton.setColor(new Color(250, 100, 100));
-          deleteButton.setPosition(new Point(infoButton.right() + 5, 2));
+          deleteButton.setPosition(new Point(autoloadButton.right() + 5, 2));
           modMorph.addChild(deleteButton);
 
           useOdd = !useOdd;
           modMorph.fixLayout = () => {
             infoButton.setLeft(label.right() + 5);
-            // autoloadButton.setLeft(infoButton.right() + 5);
-            deleteButton.setLeft(infoButton.right() + 5);
+            autoloadButton.setLeft(infoButton.right() + 5);
+            deleteButton.setLeft(autoloadButton.right() + 5);
           };
           return modMorph;
         }
@@ -822,6 +865,7 @@ async function main() {
       action() {
         const menu = new MenuMorph(modButton);
         menu.addItem("About Crackle...", "about");
+        menu.addItem("Crackle Settings...", "settings");
         menu.addItem("Download Source...", "download");
         menu.addLine();
         menu.addItem("Download mods...", () => {
@@ -900,9 +944,9 @@ async function main() {
     adjustLabel(controlBar.modButton);
     controlBar.fixLayout();
   };
-  IDE_Morph.prototype.toggleAppMode_ = IDE_Morph.prototype.toggleAppMode;
+  IDE_Morph.prototype.toggleAppMode___ = IDE_Morph.prototype.toggleAppMode;
   IDE_Morph.prototype.toggleAppMode = function (x) {
-    this.toggleAppMode_(x);
+    this.toggleAppMode___(x);
     this.isAppMode
       ? this.controlBar.modButton.hide()
       : this.controlBar.modButton.show();
