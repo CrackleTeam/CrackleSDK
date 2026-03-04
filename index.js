@@ -371,8 +371,8 @@ async function main() {
     );
 
     // scriptsMenu
-    ScriptsMorph.prototype.scriptsMenu = new Proxy(
-      ScriptsMorph.prototype.scriptsMenu,
+    ScriptsMorph.prototype.userMenu = new Proxy(
+      ScriptsMorph.prototype.userMenu,
       {
         apply(target, ctx, args) {
           window.__crackle__.currentMenu = "scriptsMenu";
@@ -389,17 +389,6 @@ async function main() {
     //
     // TODO: Remove any palette cache on hooks of this
     // and refresh the current palette
-    ScriptsMorph.prototype.freshPalette = new Proxy(
-      ScriptsMorph.prototype.freshPalette,
-      {
-        apply(target, ctx, args) {
-          window.__crackle__.currentMenu = "freshPalette";
-          Reflect.apply(...arguments); // This calls the original function
-          window.__crackle__.currentMenu = null;
-        },
-      },
-    );
-
     SpriteMorph.prototype.freshPalette = new Proxy(
       SpriteMorph.prototype.freshPalette,
       {
