@@ -150,7 +150,7 @@ class Mod extends EventTarget {
       this.description = returnValue.description || "No description provided.";
       this.version = returnValue.version || "0.0";
       this.author = returnValue.author || "Anonymous";
-      this.cleanupFuncs = returnValue.cleanupFuncs || [];
+      this.cleanupFunc = returnValue.cleanupFunc;
       this.depends = returnValue.depends || [];
       this.doMenu =
         returnValue.doMenu == undefined ? false : returnValue.doMenu;
@@ -529,7 +529,7 @@ async function main() {
     // Delete a mod by its ID
     deleteMod(id) {
       let mod = Mod.findModById(id);
-      mod.cleanupFuncs.forEach((func) => func());
+      if (mod.cleanupFunc) mod.cleanupFunc();
 
       window.__crackle__.loadedMods = window.__crackle__.loadedMods.filter(
         (mod) => mod.id != id,

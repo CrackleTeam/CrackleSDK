@@ -37,10 +37,8 @@ return {
         });
     },
 
-    // Cleanup functions - get ran when the mod is "deleted"
-    cleanupFuncs: [
-        () => {
-            console.log("Goodbye!");
-        }
-    ],
+    // Cleanup function - get ran when the mod is "deleted"
+    cleanupFunc() {
+        console.log("Goodbye!");
+    }
 }
