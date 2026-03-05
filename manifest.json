@@ -10,7 +10,7 @@
         "*://e016.github.io/split-mod/split.html",
         "*://codingisfun2831t.github.io/split-mod-prs/split.html"
       ],
-      "js": [ "index.js" ],
+      "js": [ "reload.js", "index.js" ],
       "world": "MAIN"
     }
   ]
