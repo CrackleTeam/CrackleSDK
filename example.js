@@ -1,12 +1,12 @@
-return {
+return class extends Mod {
     // Metadata
-    id: "example-mod", // the id of the mod
-    name: "Example Mod", // human-readable name
-    description: "A example mod for CrackleSDK.", // description
-    version: "1.0", // version
-    author: "Your Name", // author
-    depends: [], // dependencies (mod ids, useful for libraries)
-    doMenu: true, // whether to add a menu item
+    ID = "example-mod"; // the id of the mod
+    NAME = "Example Mod"; // human-readable name
+    DESCRIPTION = "A example mod for CrackleSDK."; // description
+    VERSION = "1.0"; // version
+    AUTHOR = "Your Name"; // author
+    DEPENDS = []; // dependencies (mod ids, useful for libraries)
+    DO_MENU = true; // whether to add a menu item
 
     // Main function - gets ran when the mod is loaded
     main() {
@@ -35,7 +35,7 @@ return {
                 alert("hi");
             })
         });
-    },
+    }
 
     // Cleanup function - get ran when the mod is "deleted"
     cleanupFunc() {

@@ -2,27 +2,27 @@
 This file will describe the interface you have with mods, both the `api` variable, the `Mod` object, and `Mod` events.
 
 ## Mod structure
-A typical mod file is a simple "return" statement, returing a object containing metadata about the mod and its code. Here is a example:
+A typical mod file is a simple "return" statement, returing a class extending Mod containing metadata about the mod and its code. Here is a example:
 ```js
-return {
+return class extends Mod {
     // Metadata
-    id: "example-mod", // the id of the mod
-    name: "Example Mod", // human-readable name
-    description: "A example mod for CrackleSDK.", // description
-    version: "1.0", // version
-    author: "Your Name", // author
-    depends: [], // dependencies (mod ids, useful for libraries)
-    doMenu: true, // whether to add a menu item
+    ID = "example-mod"; // the id of the mod
+    NAME = "Example Mod"; // human-readable name
+    DESCRIPTION = "A example mod for CrackleSDK."; // description
+    VERSION = "1.0"; // version
+    AUTHOR = "Your Name"; // author
+    DEPENDS = []; // dependencies (mod ids, useful for libraries)
+    DO_MENU = true; // whether to add a menu item
 
     // Main function - gets ran when the mod is loaded
     main() {
         // ...
-    },
+    }
 
-    // Cleanup functions - get ran when the mod is "deleted"
-    cleanupFuncs: [
+    // Cleanup function - get ran when the mod is "deleted"
+    cleanupFunc() {
         // ...
-    ],
+    }
 }
 ```
 
@@ -48,7 +48,7 @@ This section describes the variables/functions in the `api` member variable.
     * `snapMenu` - Menu when you click the Snap! logo
 
 ## `this` in `main`
-The object stored in `this` when you call main is actually NOT the object you returned. Yes, most of it is copied, but its actually a `Mod` object (see `index.js`). This mod object actually supports events, by using EventTarget. You can `addEventListener` and such, just like DOM elements. The section following contains those events you can attach to.
+The object stored in `this` is a `Mod` object (see `index.js`), because you of course inherited from it. This mod object actually supports events, by using EventTarget. You can `addEventListener` and such, just like DOM elements. The section following contains those events you can attach to.
 
 ### Events
 * `projectCreating` - Triggered whenever the current project is about to be replaced with a new one. You can cancel this action by calling "preventDefault" on it.
