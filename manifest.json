@@ -1,16 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "Crackle SDK",
-  "version": "1.0",
-  "description": "Modding framework for Snap!",
+  "name": "CrackleSDK",
+  "version": "v0.2",
+  "description": "Modding framework for Snap! and its respective mods.",
   "content_scripts": [
     {
       "matches": [
         "*://snap.berkeley.edu/snap/snap.html",
+        "*://snap.berkeley.edu/snap/dev/snap.html",
         "*://e016.github.io/split-mod/split.html",
-        "*://codingisfun2831t.github.io/split-mod-prs/split.html"
+        "*://codingisfun2831t.github.io/split-mod-prs/split.html",
+        "*://mojavesoft.net/ide/snap",
+        "*://alessandrito123.github.io/Snavanced/snap.html"
       ],
-      "js": [ "reload.js", "index.js" ],
+      "js": ["reload.js", "index.js"],
       "world": "MAIN"
     }
   ]
