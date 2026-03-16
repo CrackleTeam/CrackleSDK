@@ -160,41 +160,52 @@ class Mod extends EventTarget {
   }
 }
 
-// I import mods from CrackleTeam/CrackleMods
-class CrackleImportLibraryMorph extends DialogBoxMorph {
-  constructor(environment, action) {
-    super(environment, action);
-    this.path =
-      "https://raw.githubusercontent.com/CrackleTeam/CrackleMods/refs/heads/master/";
-    this.labelString = "Import Mod";
-    this.key = "crackle import mods";
-    fetch(this.path + "mods.json")
-      .then((x) => x.json())
-      .then(
-        (list) => (
-          (this.librariesList = list),
-          this.buildContents(),
-          this.popUp(world)
-        ),
-      );
+class CrackleMorph extends ScrollFrameMorph {
+  constructor(crackle, vertical) {
+    super();
+    this.crackle = crackle;
+    this.vertical = vertical || false;
+    this.type = "import";
+    this.myPadding = DialogBoxMorph.prototype.padding;
   }
 
+  setupLibraries(list) {
+    this.type = "import";
+    this.librariesList = list || [];
+    this.buildContents();
+    this.fixLayout();
+  }
+  setupManager(reopen) {
+    this.type = "manage";
+    this.reopen = reopen;
+    this.buildContents();
+    this.fixLayout();
+  }
+  setupSettings() {
+    this.type = "settings";
+    this.buildContents();
+    this.fixLayout();
+  }
   fixListFieldItemColors() {
     // remember to always fixLayout() afterwards for the changes
     // to take effect
     this.mods.contents.children[0].alpha = 0;
     this.mods.contents.children[0].children.forEach((item) => {
-      item.pressColor = this.titleBarColor.darker(20);
+      item.pressColor = DialogBoxMorph.prototype.titleBarColor.darker(20);
       item.color = new Color(0, 0, 0, 0);
       if (item.children[0]) {
         item.children[0].color = this.mods.color.b < 128 ? WHITE : BLACK;
       }
     });
   }
+  buildLibrary() {
+    if (this.mods) {
+      this.mods.destroy();
+    }
+    if (this.notesField) {
+      this.notesField.destroy();
+    }
 
-  buildContents() {
-    this.container = new Morph();
-    this.container.alpha = 0;
     this.mods = new ListMorph(
       this.librariesList,
       (element) =>
@@ -206,18 +217,13 @@ class CrackleImportLibraryMorph extends DialogBoxMorph {
     );
     this.mods.action = (lib) => (
       (this.selected = lib),
-      (this.notesText.text = lib.description),
+      (this.notesText.text = lib.description + (lib.author ? ("\n\n" + "made by " + lib.author) : "") ),
       this.notesText.fixLayout(),
       this.notesText.rerender()
     );
-    this.mods.setWidth(200);
-    this.mods.setHeight(100);
     this.mods.setColor(new Color(237, 237, 237));
-    this.fixListFieldItemColors();
-
     this.notesText = new TextMorph("");
     this.notesText.color = PushButtonMorph.prototype.labelColor;
-
     this.notesField = new ScrollFrameMorph();
     this.notesField.fixLayout = nop;
     this.notesField.acceptsDrops = false;
@@ -225,29 +231,435 @@ class CrackleImportLibraryMorph extends DialogBoxMorph {
     this.notesField.isTextLineWrapping = true;
     this.notesField.padding = 3;
     this.notesField.setContents(this.notesText);
-    this.notesField.setHeight(100);
-    this.notesField.setWidth(200);
-    this.notesField.setLeft(this.mods.right() + 10);
+    this.fixListFieldItemColors();
     this.notesField.color = new Color(237, 237, 237);
 
-    this.container.setWidth(this.mods.width() + 10 + this.notesField.width());
-    this.container.setHeight(100);
-    this.container.add(this.mods);
-    this.container.add(this.notesField);
+    this.addContents(this.mods);
+    this.addContents(this.notesField);
+  }
+  buildManager() {
+    const myself = this;
+    this.setColor(new Color(20, 20, 20));
+    if (!this.vertical) {
+      this.setExtent(new Point(400, 200));
+    }
+    this.acceptsDrops = false;
+    this.contents.acceptsDrops = false;
+    const oddColor = new Color(20, 20, 20);
+    const evenColor = new Color(40, 40, 40);
+    let useOdd = false;
+
+    function makeModMorph(mod) {
+      const crackle = myself.crackle;
+      // Show mod information dialog
+      const rowHeight = 25;
+
+      const modMorph = new Morph();
+      modMorph.setExtent(new Point(400, rowHeight));
+      modMorph.setColor(useOdd ? oddColor : evenColor);
+
+      const labelFrame = new FrameMorph();
+      console.log(mod);
+      const label = new TextMorph(`${mod.NAME} (${mod.ID})`);
+      label.setPosition(new Point(10, 5));
+      label.setColor(new Color(240, 240, 240));
+      labelFrame.setExtent(modMorph.extent())
+      labelFrame.add(label);
+      labelFrame.alpha = 0;
+      labelFrame.color = CLEAR;
+      modMorph.addChild(labelFrame);
+
+      const infoButton = new PushButtonMorph(
+        this,
+        () => {
+          new DialogBoxMorph().inform(
+            `Mod Information`,
+            `Name: ${mod.NAME}\n` +
+              `ID: ${mod.ID}\n` +
+              `Description: ${mod.DESCRIPTION}\n` +
+              `Version: ${mod.VERSION}\n` +
+              `Author: ${mod.AUTHOR}`,
+            world,
+          );
+        },
+        "Info",
+      );
+      
+      infoButton.setColor(new Color(100, 100, 250));
+      modMorph.addChild(infoButton);
+      modMorph.infoButton = infoButton;
+
+      const autoloadButton = new PushButtonMorph(
+        this,
+        () => {
+          if (crackle.autoload.isAutoloaded(mod.ID)) {
+            crackle.autoload.delete(mod.ID);
+            world.children[0].showMessage(
+              `${mod.name} will no longer run on startup again.`,
+            );
+          } else {
+            crackle.autoload.add(mod.ID);
+            world.children[0].showMessage(
+              `${mod.name} will now run every time you open ${crackle.snap.snap}!`,
+            );
+          }
+          autoloadButton.labelString = crackle.autoload.isAutoloaded(mod.ID)
+            ? "Un-autoload"
+            : "Autoload";
+          autoloadButton.createLabel();
+          autoloadButton.fixLayout();
+          modMorph.fixLayout();
+        },
+        crackle.autoload.isAutoloaded(mod.ID) ? "Un-autoload" : "Autoload",
+      );
+      autoloadButton.setColor(new Color(250, 250, 100));
+      if (crackle.isDev) {
+        modMorph.addChild(autoloadButton);
+      }
+      modMorph.autoloadButton = autoloadButton;
+
+      const deleteButton = new PushButtonMorph(
+        this,
+        () => {
+          crackle.deleteMod(mod.ID);
+          myself.reopen(); // reopen with refreshed list
+        },
+        "Delete",
+      );
+      deleteButton.setColor(new Color(250, 100, 100));
+      deleteButton.setTop(2);
+      deleteButton.setRight(modMorph.right() - 5);
+      autoloadButton.setTop(2);
+      autoloadButton.setRight(deleteButton.left() - 5);
+      infoButton.setTop(2);
+      infoButton.setRight(
+        (crackle.isDev ? autoloadButton : deleteButton).left() - 5,
+      );
+      modMorph.deleteButton = deleteButton;
+      modMorph.addChild(deleteButton);
+
+      useOdd = !useOdd;
+      modMorph.fixLayout = function () {
+        this.deleteButton.setTop(this.top() + 2);
+        this.deleteButton.setRight(this.right() - 2);
+        this.autoloadButton.setTop(this.top() + 2);
+        this.autoloadButton.setRight(this.deleteButton.left() - 3);
+        this.infoButton.setTop(this.top() + 2);
+        this.infoButton.setRight(
+          (crackle.isDev ? this.autoloadButton : this.deleteButton).left() - 3,
+        );
+        labelFrame.setPosition(this.position());
+        labelFrame.bounds.corner.x = this.infoButton.left() - 3;
+        labelFrame.bounds.corner.y = this.bottom();
+        labelFrame.fixLayout(true);
+        label.rerender();
+      };
+      modMorph.step = () => modMorph.bounds.setWidth(myself.width());
+      modMorph.fixLayout();
+
+      // jens... plz fix...
+      MorphicPreferences.isFlat && (infoButton.label.shadowColor = null);
+      MorphicPreferences.isFlat && (autoloadButton.label.shadowColor = null);
+      MorphicPreferences.isFlat && (deleteButton.label.shadowColor = null);
+      return modMorph;
+    }
+
+    let index = 0;
+    for (const mod of this.crackle.loadedMods) {
+      const modMorph = makeModMorph(mod);
+      modMorph.setPosition(new Point(0, index * modMorph.height()));
+      this.addContents(modMorph);
+      index++;
+    }
+  }
+  fixManageLayout() {
+    this.contents.children.forEach(child => child.fixLayout());
+  }
+  buildSettings() {
+    if (this.settings) {
+      this.settings.destroy();
+    }
+    this.settings = new AlignmentMorph("column", 5);
+    var autoload = new ToggleMorph(
+      "checkbox",
+      null,
+      () => this.crackle.toggleDev(), // action,
+      "Developer Mode", // label
+      () => this.crackle.isDev, //query
+    );
+    this.settings.add(autoload);
+    this.settings.fixLayout();
+
+    this.alpha = 0;
+    if (!this.vertical) {
+      this.setWidth(Math.min(this.settings.width(), 200));
+      this.setHeight(Math.min(this.settings.height(), 150));
+    }
+    this.addContents(this.settings);
+  }
+  buildContents() {
+    switch (this.type) {
+      case "import":
+        this.buildLibrary();
+        break;
+      case "manage":
+        this.buildManager();
+        break;
+      case "settings":
+        this.buildSettings();
+        break;
+    }
+  }
+  fixLibrariesLayout() {
+    if (this.vertical) {
+      this.mods.setWidth(this.width() - this.myPadding);
+      this.mods.setHeight(this.height() / 2 - this.myPadding);
+      this.mods.setTop(this.top());
+      this.mods.setLeft(this.left());
+
+      this.notesField.setWidth(this.width());
+      this.notesField.setHeight(this.height() / 2 - this.myPadding);
+      this.notesField.setTop(this.mods.bottom() + this.myPadding);
+      this.notesField.setLeft(this.left());
+    } else {
+      this.mods.setWidth(200);
+      this.mods.setHeight(100);
+
+      this.notesField.setHeight(100);
+      this.notesField.setWidth(200);
+      this.notesField.setLeft(this.mods.right() + 10);
+
+      this.setWidth(this.mods.width() + 10 + this.notesField.width());
+      this.setHeight(100);
+    }
+  }
+  fixLayout() {
+    ScrollFrameMorph.prototype.fixLayout.call(this);
+    this.contents.adjustBounds();
+    switch (this.type) {
+      case "import":
+        this.fixLibrariesLayout();
+        break;
+      case "manage":
+        this.fixManageLayout();
+        break;
+    }
+  }
+}
+
+// I import mods from CrackleTeam/CrackleMods
+class CrackleImportLibraryMorph extends DialogBoxMorph {
+  constructor(environment, action) {
+    super(environment, action);
+    this.container = new CrackleMorph(window.__crackle__, false);
+    this.tab = "import"; // for vertical
+    this.path =
+      "https://raw.githubusercontent.com/CrackleTeam/CrackleMods/refs/heads/master/";
+    this.labelString = "Import Mod";
+    this.key = "crackle import mods";
+    fetch(this.path + "mods.json")
+      .then((x) => x.json())
+      .then(
+        (list) => (
+          (this.librariesList = list),
+          this.container.setupLibraries(list),
+          this.buildContents(),
+          this.popUp(world),
+          this.container.fixLayout()
+        ),
+      );
+  }
+  buildContents() {
+    this.container.type == "import" && (this.container.alpha = 0);
 
     this.createLabel();
+
     this.addBody(this.container);
-    this.addButton(
-      () =>
-        fetch(this.path + "mods/" + this.selected.id + ".js")
-          .then((x) => x.text())
-          .then((mod) => (this.action(mod, this.selected.name), this.destroy())),
-      "Import",
-    );
-    this.addButton("cancel", "Cancel");
+    if (this.buttons.children.length == 0) {
+      this.addButton(
+        () =>
+          fetch(this.path + "mods/" + this.container.selected.id + ".js")
+            .then((x) => x.text())
+            .then(
+              (mod) => (
+                this.action(mod, this.container.selected.name),
+                this.vertical || this.destroy()
+              ),
+            ),
+        "Import",
+      );
+      this.addButton("cancel", "Cancel");
+    }
     this.fixLayout();
   }
-};
+}
+
+class VerticalCrackleDialogMorph extends CrackleImportLibraryMorph {
+  constructor(environment, action) {
+    super(environment, action);
+    this.corner = 0;
+    this.tab = "import";
+    this.container.vertical = true;
+    this.vertical = true;
+  }
+  reactToWorldResize(rect) {
+    this.changed();
+    this.bounds = rect;
+    this.rerender();
+    this.fixLayout();
+  }
+  switchTab(tab) {
+    this.changed();
+    this.container = new CrackleMorph(window.__crackle__, true);
+    this.container.type = this.tab || "import";
+    this.tab = tab;
+    switch (tab) {
+      case "import":
+        this.container.setupLibraries(this.librariesList || []);
+        break;
+      case "manage":
+        this.container.setupManager(() => this.container.setupManager());
+        break;
+      case "settings":
+        this.container.setupSettings();
+        break;
+    }
+    this.buildContents();
+    this.fixContainerLayout();
+    this.fixLayout();
+  }
+  buildTabs() {
+    if (this.tabs) {
+      this.tabs.destroy();
+    }
+
+    function setTab(tab) {
+      tab.getPressRenderColor = function () {
+        return this.pressColor;
+      };
+      tab.corner = 10;
+      tab.padding = 3;
+      tab.edge = 1;
+      tab.labelShadowOffset = new Point(-1, -1);
+      tab.fontSize = 10;
+      tab.labelColor = WHITE;
+      tab.labelShadowColor = BLACK;
+      tab.labelShadowOffset = new Point(1, 1);
+      tab.fixLayout();
+    } 
+
+    var tab,
+      colors = [
+        PushButtonMorph.prototype.color.darker(), 
+        PushButtonMorph.prototype.highlightColor.darker(), 
+        PushButtonMorph.prototype.pressColor.darker()
+      ];
+    this.tabs = new AlignmentMorph("row", -15, "center");
+    this.tabs.alignment = "center";
+    tab = new TabMorph(
+      colors,
+      null,
+      () => {
+        this.switchTab("import")
+      },
+      "Explore",
+      () => this.tab == "import",
+    );
+    setTab(tab);
+    this.tabs.add(tab);
+    tab = new TabMorph(
+      colors,
+      null,
+      () => {
+        this.switchTab("manage")
+      },
+      "Manage",
+      () => this.tab == "manage",
+    );
+    setTab(tab);
+    this.tabs.add(tab);
+    tab = new TabMorph(
+      colors,
+      null,
+      () => {
+        this.switchTab("settings")
+      },
+      "Settings",
+      () => this.tab == "settings",
+    );
+    setTab(tab);
+    this.tabs.add(tab);
+    this.addHead(this.tabs);
+  }
+  buildContents() {
+    CrackleImportLibraryMorph.prototype.buildContents.call(this);
+    this.buildTabs();
+    this.buttons.children[1]?.destroy?.();
+  }
+  fixContainerLayout() {
+    this.container.setExtent(this.extent());
+    this.container.bounds.corner.x = this.right() - this.padding;
+    this.container.bounds.corner.y = this.buttons.top() - this.padding;
+    this.container.fixLayout();
+    this.container.contents.adjustBounds();
+  }
+  popUp(world) {
+    CrackleImportLibraryMorph.prototype.popUp.call(this, world);
+    this.setPosition(new Point(0, 0));
+    this.setWidth(world.width());
+    this.setHeight(world.height());
+    this.fixLayout();
+    this.fixContainerLayout();
+    this.fixLayout();
+    // this.isDraggable = false;
+  }
+  fixLayout() {
+    // determine by extent and arrange my components
+    var th = fontHeight(this.titleFontSize) + this.titlePadding * 2,
+      w,
+      stack = isNil(this.stackPadding) ? this.padding : this.stackPadding;
+
+    if (this.head) {
+      this.head.setPosition(
+        this.position().add(new Point(this.padding, th + this.padding)),
+      );
+      this.head.setWidth(this.right() - this.head.left() - this.padding);
+    }
+
+    if (this.body) {
+      this.body.setPosition(
+        (this.head
+          ? this.head.bottomLeft().subtract(new Point(0, this.padding * 2))
+          : this.position()
+        ).add(new Point(this.padding, th + stack)),
+      );
+      this.body.fixLayout();
+    }
+
+    if (this.label) {
+      this.label.setCenter(this.center());
+      this.label.setTop(this.top() + (th - this.label.height()) / 2);
+    }
+
+    if (this.buttons && this.buttons.children.length > 0) {
+      this.buttons.fixLayout();
+      /*this.bounds.setHeight(
+            this.height()
+                + this.buttons.height()
+                + this.padding
+        );*/
+      this.bounds.setWidth(
+        Math.max(this.width(), this.buttons.width() + 2 * this.padding),
+      );
+      this.buttons.setCenter(this.center());
+      this.buttons.setBottom(this.bottom() - this.padding);
+    }
+
+    // refresh a shallow shadow
+    this.removeShadow();
+    this.addShadow();
+  }
+}
 
 
 // wait for Snap! to be ready and get references
@@ -523,15 +935,15 @@ function attachEventHandlers(ide) {
 
     autoload: {
       load() {
-        let data = localStorage.getItem("crackle_autoload_mods");
+        let data = window.__crackle__.storage.get("crackle_autoload_mods");
         if (!data || data == "[]")
-          (localStorage.setItem("crackle_autoload_mods", "{}"), (data = {}));
+          (window.__crackle__.storage.set("crackle_autoload_mods", "{}"), (data = {}));
 
         return JSON.parse(data) || {};
       },
 
       save() {
-        localStorage.setItem(
+        window.__crackle__.storage.set(
           "crackle_autoload_mods",
           JSON.stringify(window.__crackle__.autoloadMods),
         );
@@ -568,19 +980,31 @@ function attachEventHandlers(ide) {
         }
       },
     },
-    doAutoload: true,
-    toggleAutoload() {
-      window.__crackle__.doAutoload = !window.__crackle__.doAutoload;
+    isDev: false,
+    toggleDev() {
+      window.__crackle__.isDev = !window.__crackle__.isDev;
       this.saveSettings();
     },
     loadSettings() {
-      var settings = JSON.parse(localStorage.getItem("crackle_settings") || "{}");
-      this.doAutoload = settings.doAutoload !== false;
+      var settings = JSON.parse(this.storage.get("crackle_settings") || "{}");
+      this.isDev = settings.isDev !== false;
     },
     saveSettings() {
-      localStorage.setItem("crackle_settings", JSON.stringify({
-        doAutoload: window.__crackle__.doAutoload
-      }));
+      this.storage.set(
+        "crackle_settings",
+        JSON.stringify({
+          isDev: window.__crackle__.isDev,
+        }),
+      );
+    },
+
+    storage: {
+      set(key, value) {
+        localStorage.setItem(key, value);
+      },
+      get(key) {
+        return localStorage.getItem(key);
+      },
     },
 
     currentMenu: null,
@@ -687,15 +1111,8 @@ function attachEventHandlers(ide) {
         var dlg = new DialogBoxMorph(),
           body = new AlignmentMorph('column', 5);
 
-        var autoload = new ToggleMorph(
-          'checkbox',
-          dlg,
-          () => window.__crackle__.toggleAutoload(), // action,
-          "Automatically Autoload Mods", // label
-          () => window.__crackle__.doAutoload //query
-        );
-        body.add(autoload);
-        body.fixLayout();
+        body = new CrackleMorph(window.__crackle__, false);
+        body.setupSettings();
 
         dlg.key = "settings";
         dlg.labelString = "Crackle Settings";
@@ -772,107 +1189,8 @@ function attachEventHandlers(ide) {
         dlg.labelString = "Manage Loaded Mods";
         dlg.createLabel();
 
-        const list = new ScrollFrameMorph();
-        list.setColor(new Color(20, 20, 20));
-        list.setExtent(new Point(400, 200));
-        list.acceptsDrops = false;
-        list.contents.acceptsDrops = false;
-        const oddColor = new Color(20, 20, 20);
-        const evenColor = new Color(40, 40, 40);
-        let useOdd = false;
-
-        function makeModMorph(mod) {
-          // Show mod information dialog
-          const rowHeight = 25;
-
-          const modMorph = new Morph();
-          modMorph.setExtent(new Point(400, rowHeight));
-          modMorph.setColor(useOdd ? oddColor : evenColor);
-
-          const label = new TextMorph(`${mod.NAME} (${mod.ID})`);
-          label.setPosition(new Point(10, 5));
-          label.setColor(new Color(240, 240, 240));
-          modMorph.addChild(label);
-
-          const infoButton = new PushButtonMorph(
-            this,
-            () => {
-              new DialogBoxMorph().inform(
-                `Mod Information`,
-                `Name: ${mod.NAME}\n` +
-                `ID: ${mod.ID}\n` +
-                `Description: ${mod.DESCRIPTION}\n` +
-                `Version: ${mod.VERSION}\n` +
-                `Author: ${mod.AUTHOR}`,
-                world,
-              );
-            },
-            "Info",
-          );
-          infoButton.setColor(new Color(100, 100, 250));
-          infoButton.setPosition(new Point(label.right() + 5, 2));
-          modMorph.addChild(infoButton);
-
-          const autoloadButton = new PushButtonMorph(
-            this,
-            () => {
-              if (window.__crackle__.autoload.isAutoloaded(mod.ID)) {
-                window.__crackle__.autoload.delete(mod.ID);
-                world.children[0].showMessage(
-                  `${mod.name} will no longer run on startup again.`,
-                );
-              } else {
-                window.__crackle__.autoload.add(mod.ID);
-                world.children[0].showMessage(
-                  `${mod.name} will now run every time you open Snap!`,
-                );
-              }
-              autoloadButton.labelString =
-                window.__crackle__.autoload.isAutoloaded(mod.ID)
-                  ? "Un-autoload"
-                  : "Autoload";
-              autoloadButton.createLabel();
-              autoloadButton.fixLayout();
-              modMorph.fixLayout();
-            },
-            window.__crackle__.autoload.isAutoloaded(mod.ID)
-              ? "Un-autoload"
-              : "Autoload",
-          );
-          autoloadButton.setColor(new Color(250, 250, 100));
-          autoloadButton.setPosition(new Point(infoButton.right() + 5, 2));
-          modMorph.addChild(autoloadButton);
-
-          const deleteButton = new PushButtonMorph(
-            this,
-            () => {
-              window.__crackle__.deleteMod(mod.ID);
-              dlg.destroy();
-              modButton.manageLoadedMods(); // reopen with refreshed list
-            },
-            "Delete",
-          );
-          deleteButton.setColor(new Color(250, 100, 100));
-          deleteButton.setPosition(new Point(autoloadButton.right() + 5, 2));
-          modMorph.addChild(deleteButton);
-
-          useOdd = !useOdd;
-          modMorph.fixLayout = () => {
-            infoButton.setLeft(label.right() + 5);
-            autoloadButton.setLeft(infoButton.right() + 5);
-            deleteButton.setLeft(autoloadButton.right() + 5);
-          };
-          return modMorph;
-        }
-
-        let index = 0;
-        for (const mod of window.__crackle__.loadedMods) {
-          const modMorph = makeModMorph(mod);
-          modMorph.setPosition(new Point(0, index * modMorph.height()));
-          list.addChild(modMorph);
-          index++;
-        }
-
+        const list = new CrackleMorph(window.__crackle__, false);
+        list.setupManager(() => (dlg.destroy(), this.manageLoadedMods()));
         dlg.addBody(list);
         dlg.addButton("ok", "OK");
         dlg.fixLayout();
@@ -887,20 +1205,27 @@ function attachEventHandlers(ide) {
         menu.addItem("Crackle Settings...", "settings");
         menu.addItem("Download Source...", "download");
         menu.addLine();
-        menu.addItem("Download mods...", () => {
-          new CrackleImportLibraryMorph(this, (code, name) => {
-            window.__crackle__.addMod(code);
-            world.children[0].showMessage(`${name} Loaded`);
-          });
-        }); // not yet... we need MODS.json
-        menu.addItem("Load mod from code...", "loadMod");
+        menu.addItem(
+          "Download mods...",
+          () => {
+            new CrackleImportLibraryMorph(this, (code, name) => {
+              window.__crackle__.addMod(code, true);
+              new MenuMorph(null, `${name} Loaded`).popUpCenteredInWorld(
+                this.world(),
+              );
+            });
+          },
+          null,
+          null,
+          true,
+        );
         menu.addItem("Load mod from file...", "loadModFile");
-        if (world.currentKey === 16) { // shift
+        if (window.__crackle__.isDev || world.currentKey === 16) { // shift
           menu.addLine();
           menu.addItem("Load temporary mod from code...", () => modButton.loadMod(true),
-            "load a temporary mod from code, mainly for development", new Color(100, 0, 0));
+            "load a temporary mod from code" + (window.__crackle__.isDev ? "" : ", mainly for development"), new Color(100, 0, 0));
           menu.addItem("Load temporary mod from file...", () => modButton.loadModFile(true),
-            "load a temporary mod from file, mainly for development", new Color(100, 0, 0));
+            "load a temporary mod from file" + (window.__crackle__.isDev ? "" : ", mainly for development"), new Color(100, 0, 0));
         }
         menu.addLine();
         menu.addItem("Manage loaded mods...", "manageLoadedMods");
