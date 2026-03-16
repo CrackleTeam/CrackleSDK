@@ -1,3 +1,4 @@
+"use strict";
 /* 
     CrackleSDK - A modding framework for Snap!
     Copyright (C) 2025, developed by CrackleTeam
@@ -848,18 +849,37 @@ function attachEventHandlers(ide) {
     crackleSymbol: Symbol("Crackle Data"),
     wrappedFunctions: new Map(),
     snap: (function () {
+      // Jameson?
+      if (
+        window.location.hostname + window.location.pathname ==
+        "mojavesoft.net/ide/snap"
+      ) {
+        return {
+          snap: "Jameson",
+          version: window.SnapVersion,
+        };
+      }
+
+      // Snavanced
+      if (window.SnavancedVersion) {
+        return {
+          snap: "Snavanced",
+          version: window.SnavancedVersion,
+        };
+      }
+
       // Split?
-      if (typeof SplitVersion !== "undefined") {
+      if (typeof window.SplitVersion !== "undefined") {
         return {
           snap: "Split",
-          version: SplitVersion
+          version: window.SplitVersion
         };
       }
 
       // default to Snap
       return {
         snap: "Snap",
-        version: SnapVersion
+        version: window.SnapVersion
       }
     })(),
 
