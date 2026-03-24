@@ -1,3 +1,9 @@
+# ARCHIVED!!
+## As in Mar 24, Crackle is replaced with [Sparkle](https://github.com/Mojavesoft-Group/sparkle)!
+
+---
+---
+
 # CrackleSDK
 ![Crackle Logo](doc/logo.png)
 
