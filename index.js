@@ -851,8 +851,9 @@ function attachEventHandlers(ide) {
     snap: (function () {
       // Jameson?
       if (
-        window.location.hostname + window.location.pathname ==
-        "mojavesoft.net/ide/snap"
+        (window.location.hostname + window.location.pathname) ==
+        "mojavesoft.net/ide/snap" || (window.location.hostname + window.location.pathname) ==
+        "mojavesoft.org/ide/snap"
       ) {
         return {
           snap: "Jameson",
